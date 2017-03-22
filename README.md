@@ -5,18 +5,15 @@ VocalEyes Vibrato is a dynamic web app that provides vibrato visualizations for 
 
 ### What is this repository for? ###
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+This repo includes both the front end and back end, which are both served via Flask on top of WSGI.
 
 ### How do I get set up? ###
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+This app uses Flask with a WSGI server. It is written in Python 3 (I'm thinking about switching to Python 2). Other required libraries are included in requirements.txt, which has a lot of extra libraries that aren't actually being used. I'm working on setting it up to use virtualenv and will update requirements.txt and these instructions.
+
+#### Deployment ####
+
+The app is set up to be deployed on Heroku, which automatically installs all the needed dependencies via requirements.txt and Procfile.
 
 ### Contribution guidelines ###
 
