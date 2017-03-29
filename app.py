@@ -10,8 +10,6 @@ socketio = SocketIO(app)
 
 # This is the path to the upload directory
 app.config['SCRIPTS_FOLDER'] = 'scripts'
-app.config['DATA_FOLDER'] = 'data'
-app.config['UPLOAD_FILE'] = 'file.wav'
 app.config['ALLOWED_TYPES'] = {'audio/wav'}
 
 
@@ -35,20 +33,11 @@ def results():
 def submit():
     file = request.files['file']
     if file and file.content_type in app.config['ALLOWED_TYPES']:
-        # TODO: never save to server?
-        if not os.path.exists(app.config['DATA_FOLDER']):
-            os.makedirs(app.config['DATA_FOLDER'])
-        file.save(os.path.join(app.config['DATA_FOLDER'], app.config['UPLOAD_FILE']))
         result = process(file)
         return jsonify(result.serialize())
     else:
         return Response(response="Only the following mimetypes are accepted: {}"
                         .format(str(app.config['ALLOWED_TYPES'])), status=404)
-
-
-@app.route('/data/<filename>', methods=['GET'])
-def data_file(filename):
-    return send_from_directory(app.config['DATA_FOLDER'], filename, cache_timeout=1)
 
 
 @app.route('/scripts/<filename>', methods=['GET'])

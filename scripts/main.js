@@ -34,7 +34,6 @@ var record = function() {
 var stop = function() {
     recorder.stop();
     recorder.exportWAV(function(blob) {
-        console.dir(blob);
         submit(blob);
         audioElem.src = window.URL.createObjectURL(blob);
     });
@@ -61,9 +60,6 @@ var submit = function(blob) {
         contentType: false,
         success: function(data) {
             visualize(data);
-            // TODO: connect recorded audio to audio element
-            // Reload audio
-//            audioElem.src = '../data/file.wav';
             audioElem.load();
             recordButton.style.display = '';
             statusLabel.innerHTML = '';
