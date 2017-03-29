@@ -1,7 +1,6 @@
 # README #
 
-VocalEyes Vibrato is a dynamic web app that provides vibrato visualizations for musicians
-(both singers and instrumentalists).
+VocalEyes Vibrato is a dynamic web app that provides vibrato visualizations for musicians.
 
 ### What is this repository for? ###
 
