@@ -17,9 +17,11 @@ The app is set up to be deployed on Heroku, which automatically installs all the
 
 ### Contribution guidelines ###
 
-* Writing tests
-* Code review
-* Other guidelines
+When you want to add a new feature or fix a bug, create a separate branch and then submit a pull request. Someone else on the team will review the pull request and accept it. This will ensure that everyone is mostly up to date on the latest code changes.
+
+I recommend that you follow this repository and get notifications whenever any changes are made. Then you can pull in any changes to your local repo. If you don't do this and you are editing the same file as somebody else, it will be a mess when you try to merge the different versions together.
+
+In short, commit often and pull in changes often.
 
 ### Who do I talk to? ###
 
