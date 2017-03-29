@@ -1,8 +1,6 @@
 import os
-import random
 from flask import Flask, render_template, request, Response, send_from_directory, jsonify
 from flask_socketio import SocketIO, emit
-from settings import *
 from processing import process, ProcessingResult
 
 
@@ -11,9 +9,9 @@ app = Flask(__name__)
 socketio = SocketIO(app)
 
 # This is the path to the upload directory
-app.config['SCRIPTS_FOLDER'] = SCRIPTS_FOLDER
-app.config['DATA_FOLDER'] = DATA_FOLDER
-app.config['UPLOAD_FILE'] = UPLOAD_FILE
+app.config['SCRIPTS_FOLDER'] = 'scripts'
+app.config['DATA_FOLDER'] = 'data'
+app.config['UPLOAD_FILE'] = 'file.wav'
 app.config['ALLOWED_TYPES'] = {'audio/wav'}
 
 
@@ -37,7 +35,9 @@ def results():
 def submit():
     file = request.files['file']
     if file and file.content_type in app.config['ALLOWED_TYPES']:
-        # TODO: never save to server? Delete data folder?
+        # TODO: never save to server?
+        if not os.path.exists(app.config['DATA_FOLDER']):
+            os.makedirs(app.config['DATA_FOLDER'])
         file.save(os.path.join(app.config['DATA_FOLDER'], app.config['UPLOAD_FILE']))
         result = process(file)
         return jsonify(result.serialize())

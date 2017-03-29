@@ -33,14 +33,16 @@ var record = function() {
 
 var stop = function() {
     recorder.stop();
-    recorder.exportWAV(function(s) {
-        submit(s);
+    recorder.exportWAV(function(blob) {
+        console.dir(blob);
+        submit(blob);
+        audioElem.src = window.URL.createObjectURL(blob);
     });
     stopped = true;
     recordButton.innerHTML = 'Record';
 }
 
-var submit = function(file) {
+var submit = function(blob) {
 
     // START A LOADING SPINNER HERE
     statusLabel.innerHTML = 'Processing...';
@@ -49,7 +51,7 @@ var submit = function(file) {
 
     // Create a formdata object and add the files
     var data = new FormData();
-    data.append('file', file);
+    data.append('file', blob);
 
     $.ajax({
         url: "submit",
