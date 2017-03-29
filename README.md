@@ -9,13 +9,10 @@ This repo includes both the front end and back end, which are both served via Fl
 
 ### How do I get set up? ###
 
-To get started, you need Python 3 and virtualenv. Other dependencies are installed via virtualenv and the requirements.txt.
-
-Once you have Python 3 and virtualenv installed, follow these steps: 
+To get started, you need Python 3 and virtualenv. Then follow these steps: 
 1. Clone the repository and navigate to the root directory of the project.
-2. Set up a virtual environment: `virtualenv env`
-3. Active the virtual environment: `source env/bin/activate`
-4. Install all project dependencies: `pip3 install -r requirements.txt`
+2. Set up and activate a virtual environment: `virtualenv env && source env/bin/activate`
+3. Install all project dependencies: `pip3 install -r requirements.txt`
 
 #### Deployment ####
 
