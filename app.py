@@ -1,12 +1,9 @@
-import os
 from flask import Flask, render_template, request, Response, send_from_directory, jsonify
-from flask_socketio import SocketIO, emit
-from processing import process, ProcessingResult
 
 
 # Initialize the Flask application
 app = Flask(__name__)
-socketio = SocketIO(app)
+# socketio = SocketIO(app)
 
 # This is the path to the upload directory
 app.config['SCRIPTS_FOLDER'] = 'scripts'
@@ -45,21 +42,6 @@ def static_file(filename):
     return send_from_directory(app.config['SCRIPTS_FOLDER'], filename)
 
 
-@socketio.on('connect')
-def on_connect():
-    # TODO: register user with id, pass id back to user
-    print("client connecting...")
-    emit('client registered')
-
-
-@socketio.on('submit')
-def on_submit(file):
-    # TODO: Socket submission. Assign id to submission
-    # TODO: Make sure to only notify user who submitted.
-    emit('processing')
-    result = process(file)
-    emit('processing finished', result.serialize())
-
-
 if __name__ == '__main__':
-    socketio.run(app)
+    app.run()
+    # socketio.run(app)

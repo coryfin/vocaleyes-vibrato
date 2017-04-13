@@ -84,18 +84,3 @@ stopped = true;
 recordButton.style.display = '';
 statusLabel.style.display = 'none';
 resultsElem.style.display = 'none';
-
-
-//var socket = io.connect();
-//
-//socket.on('client registered', function(clientId) {
-//
-//})
-//
-//socket.on('processing', function() {
-//
-//})
-//
-//socket.on('processing finished', function(result) {
-//
-//})
