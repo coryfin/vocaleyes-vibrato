@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, Response, send_from_directory, jsonify
+from flask import Flask, render_template, send_from_directory
 
 
 # Initialize the Flask application
@@ -6,7 +6,6 @@ app = Flask(__name__)
 
 # This is the path to the upload directory
 app.config['SCRIPTS_FOLDER'] = 'scripts'
-app.config['ALLOWED_TYPES'] = {'audio/wav'}
 
 
 # For a given file, return whether it's an allowed type or not
