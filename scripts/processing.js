@@ -4,6 +4,8 @@
  * You can then get all processed pitches, rates, and widths via getPitches, getVibratoRates, getVibratoWidths
  */
 
+let recentPitch;//global access in case setInterval isn't good enough to use
+
 function AudioProcessor(sampleRate, pitchFrameDuration, vibratoFrameDuration) {
     this.sampleRate = sampleRate;
     this.frameSize = nextPow2(pitchFrameDuration * sampleRate);
@@ -30,6 +32,13 @@ AudioProcessor.prototype.getVibratoRates = function() {
 AudioProcessor.prototype.getVibratoWidths = function() {
     return this.vibratoWidths;
 }
+
+AudioProcessor.prototype.currentPitch = function() {
+	recentPitch = this.pitches[this.pitches.length - 1];
+	return this.pitches[this.pitches.length - 1];
+	
+}
+
 
 /*
  * Resets all historical frames, pitches, and vibrato results.

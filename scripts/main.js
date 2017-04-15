@@ -9,6 +9,9 @@ let recorder;
 let audioProcessor;
 let frameSize;
 
+let intervalFunc;
+let previousPitch;
+
 // Pitch recognition params
 let frameDuration = 0.02; // 2 cycles of 100 Hz tone
 let vibratoFrameDuration = 1; // 2 cycles of 2 Hz vibrato. See https://en.wikipedia.org/wiki/Vibrato#Typical_rate_and_extent_of_vibrato
@@ -28,7 +31,9 @@ var record = function() {
 
         frameSize = nextPow2(frameDuration * context.sampleRate);
         audioProcessor = new AudioProcessor(context.sampleRate, frameDuration, vibratoFrameDuration);
-    })
+    	
+		intervalFunc = setInterval(calcPitch,50);
+	})
 }
 
 var stop = function() {
@@ -37,7 +42,8 @@ var stop = function() {
         audioElem.src = window.URL.createObjectURL(blob);
     });
     recorder.getBuffer(processBuffers);
-    stopped = true;
+    intervalFunc.clearInterval();
+	stopped = true;
     recordButton.innerHTML = 'Record';
 }
 
@@ -87,6 +93,40 @@ function drawChart(pitches) {
 
     var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
     chart.draw(data, options);
+}
+
+function calcPitch(){
+	//get most recent pitch
+	var currentPitch = audioProcessor.prototype.currentPitch;
+
+	//base case
+	if(previousPitch === null){
+		previousPitch = currentPitch.freq;
+		drawCurrentPitch(currentPitch.freq);
+		return;
+	}
+
+	if(currentPitch > 1.9 * previousPitch){//catches if fundemental frequency was dropped
+		drawCurrentPitch(previousPitch);
+		previousPitch = currentPitch.freq;
+	}
+
+
+	if(currentPitch < 0.55 * previousPitch){//catches if fundemental was dropped in the previous function call
+		drawCurrentPitch(previousPitch);
+		previousPitch = currentPitch.freq;
+	}
+
+}
+
+/*
+This function needs to be implemented
+
+It takes in a frequency as a 32 bit float
+and should draw this onto the screen somehow
+*/
+function drawCurrentPitch(pitch){
+	return true;
 }
 
 // Hook up events
