@@ -1,28 +1,17 @@
-let state;
+let recordButton = document.getElementById('record');
+let statusLabel = document.getElementById('status');
+let resultsElem = document.getElementById('results');
+let audioElem = document.getElementById('audio');
+let visualizationElem = document.getElementById('visualization');
+
 let stopped;
 let recorder;
-const recordButton = document.getElementById('record');
-const statusLabel = document.getElementById('status');
-const resultsElem = document.getElementById('results');
-const audioElem = document.getElementById('audio');
-const visualizationElem = document.getElementById('visualization');
-let sampleRate;
-let frameDuration = 0.02; // 2 cycles of 100 Hz tone
+let audioProcessor;
 let frameSize;
-let pitchAnalyzer;
-let pitchSampleRate;
-let vibratoFrameDuration = 1; // 2 cycles of 2 Hz vibrato. See https://en.wikipedia.org/wiki/Vibrato#Typical_rate_and_extent_of_vibrato
-let vibratoFrameSize;
-let vibratoAnalyzer;
 
-recordButton.addEventListener('click', function() {
-    if (stopped) {
-        record();
-    }
-    else {
-        stop();
-    }
-})
+// Pitch recognition params
+let frameDuration = 0.02; // 2 cycles of 100 Hz tone
+let vibratoFrameDuration = 1; // 2 cycles of 2 Hz vibrato. See https://en.wikipedia.org/wiki/Vibrato#Typical_rate_and_extent_of_vibrato
 
 var record = function() {
     navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function(stream) {
@@ -30,22 +19,15 @@ var record = function() {
         // Begin recording, update state
         stopped = false;
         recordButton.innerHTML = 'Stop';
-        resultsElem.style.display = 'none';
+//        resultsElem.style.display = 'none';
 
         var context = new AudioContext();
         var mediaStreamSource = context.createMediaStreamSource(stream);
         recorder = new Recorder(mediaStreamSource);
         recorder.record();
 
-        // Set up pitch analyzer
-        sampleRate = context.sampleRate;
-        frameSize = nextPow2(frameDuration * sampleRate);
-        pitchAnalyzer = new PitchAnalyzer(sampleRate);
-
-        // Set up vibrato analyzer
-        pitchSampleRate = sampleRate / frameSize;
-        vibratoFrameSize = nextPow2(vibratoFrameDuration * pitchSampleRate);
-        vibratoAnalyzer = new PitchAnalyzer(pitchSampleRate);
+        frameSize = nextPow2(frameDuration * context.sampleRate);
+        audioProcessor = new AudioProcessor(context.sampleRate, frameDuration, vibratoFrameDuration);
     })
 }
 
@@ -79,84 +61,46 @@ var processBuffers = function(buffers) {
         frames.push(buffer.slice(start, end));
     }
 
-    var pitches = frames.map(function(frame) { return processFrame(frame); })
+    frames.forEach(function(frame) { return audioProcessor.process(frame); })
+    drawChart(audioProcessor.getPitches());
 
-    numFrames = pitches.length - vibratoFrameSize + 1;
-    frames = [];
-    for (var i = 0; i < numFrames; i++) {
-        frames.push(pitches.slice(i, i + vibratoFrameSize));
+//    audioProcessor.getVibratoRates().forEach(function(result) { console.log(result); })
+
+    statusLabel.innerHTML = '';
+    statusLabel.style.display = 'none';
+    recordButton.style.display = '';
+    resultsElem.display = '';
+}
+
+function drawChart(pitches) {
+
+    var pitchTuples = [];
+    for (var i = 0; i < pitches.length; i++) {
+        pitchTuples.push([i, pitches[i]])
     }
+    var data = google.visualization.arrayToDataTable([['Time', 'Pitch']].concat(pitchTuples));
 
-    var vibratos = frames.map(function(frame) { return processPitchFrame(frame); })
-    var rates = vibratos.map(function(result) { return result.rate; })
-    var widths = vibratos.map(function(result) { return result.width; })
-    vibratos.forEach(function(result) { console.log(result.rate); })
+    var options = {
+        title: 'Pitch',
+        curveType: 'function'
+    };
+
+    var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+    chart.draw(data, options);
 }
 
-var processFrame = function(buffer) {
-
-    /* Copy samples to the internal buffer */
-    pitchAnalyzer.input(buffer);
-
-    /* Process the current input in the internal buffer */
-    pitchAnalyzer.process();
-
-    var tone = pitchAnalyzer.findTone();
-
-    if (tone === null) {
-        return 0;
-    }
-    else {
-        return tone.freq;
-    }
-}
-
-var processPitchFrame = function(frame) {
-
-    // Offset the mean pitch
-    var meanPitch = mean(frame);
-    frame = frame.map(function(val) { return val - meanPitch; })
-
-    vibratoAnalyzer.input(frame);
-
-    /* Process the current input in the internal buffer */
-    vibratoAnalyzer.process();
-
-    var tone = vibratoAnalyzer.findTone();
-
-    if (tone === null) {
-        return {
-            rate: 0,
-            width: 0
-        }
-    }
-    else {
-        return {
-            rate: tone.freq,
-            width: tone.db
-        }
-    }
-}
-
-var mean = function(vals) {
-    var total = 0;
-    vals.forEach(function(val) { total += val; })
-    return total / vals.length;
-}
-
-var nextPow2 = function(x) {
-    return Math.pow(2, Math.ceil(Math.log(x) / Math.log(2)));
-}
-
-var visualize = function(result) {
-    // TODO: load result into visualization
-//    console.dir(result);
-}
-
-
+// Hook up events
+recordButton.addEventListener('click', function() {
+    if (stopped) record();
+    else stop();
+})
 
 // Init
 stopped = true;
 recordButton.style.display = '';
 statusLabel.style.display = 'none';
-resultsElem.style.display = 'none';
+//resultsElem.style.display = 'none';
+google.charts.load('current', {'packages':['corechart']});
+google.charts.setOnLoadCallback(function() { drawChart([0]); });
+
+
