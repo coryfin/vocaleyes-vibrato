@@ -30,8 +30,39 @@ var record = function() {
         recorder.record();
 
         frameSize = nextPow2(frameDuration * context.sampleRate);
+
         audioProcessor = new AudioProcessor(context.sampleRate, frameDuration, vibratoFrameDuration);
-    	
+
+        var analyzer = context.createAnalyser();
+        var processorNode = context.createScriptProcessor(frameSize, 1, 1);
+        processorNode.onaudioprocess = function(e) {
+
+            if (!stopped) {
+
+                // Get the audio buffer
+                var audioBuffer = new Float32Array(frameSize);
+                analyzer.getFloatTimeDomainData(audioBuffer);
+
+                // Save buffer to frame
+                var audioFrame = new Float32Array(frameSize);
+                for (var i = 0; i < audioBuffer.length; i++) {
+                    audioFrame[i] = audioBuffer[i];
+                }
+
+                // Process frame
+                audioProcessor.process(audioFrame, context.currentTime);
+
+                // TODO: draw chart for every frame or using setInterval?
+                drawChart(audioProcessor.getPitches());
+            }
+        }
+
+        // Connect the source to the processors
+        mediaStreamSource.connect(analyzer);
+        mediaStreamSource.connect(processorNode);
+
+        processorNode.connect(context.destination);
+
 		intervalFunc = setInterval(calcPitch,50);
 	})
 }
@@ -41,41 +72,9 @@ var stop = function() {
     recorder.exportWAV(function(blob) {
         audioElem.src = window.URL.createObjectURL(blob);
     });
-    recorder.getBuffer(processBuffers);
     intervalFunc.clearInterval();
 	stopped = true;
     recordButton.innerHTML = 'Record';
-}
-
-var processBuffers = function(buffers) {
-
-    // START A LOADING SPINNER HERE
-    statusLabel.innerHTML = 'Processing...';
-    statusLabel.style.display = '';
-    recordButton.style.display = 'none';
-
-    // Mix stereo channels to mono
-    var buffer = buffers[0].map(function(val, i) {
-        return (val + buffers[1][i]) / 2;
-    })
-
-    var numFrames = Math.floor(buffer.length / frameSize);
-    var frames = [];
-    for (var i = 0; i < numFrames; i++) {
-        var start = i * frameSize;
-        var end = start + frameSize;
-        frames.push(buffer.slice(start, end));
-    }
-
-    frames.forEach(function(frame) { return audioProcessor.process(frame); })
-    drawChart(audioProcessor.getPitches());
-
-//    audioProcessor.getVibratoRates().forEach(function(result) { console.log(result); })
-
-    statusLabel.innerHTML = '';
-    statusLabel.style.display = 'none';
-    recordButton.style.display = '';
-    resultsElem.display = '';
 }
 
 function drawChart(pitches) {
@@ -97,7 +96,7 @@ function drawChart(pitches) {
 
 function calcPitch(){
 	//get most recent pitch
-	var currentPitch = audioProcessor.prototype.currentPitch;
+	var currentPitch = audioProcessor.currentPitch();
 
 	//base case
 	if(previousPitch === null){
@@ -106,7 +105,7 @@ function calcPitch(){
 		return;
 	}
 
-	if(currentPitch > 1.9 * previousPitch){//catches if fundemental frequency was dropped
+	if(currentPitch > 1.9 * previousPitch){//catches if fundamental frequency was dropped
 		drawCurrentPitch(previousPitch);
 		previousPitch = currentPitch.freq;
 	}

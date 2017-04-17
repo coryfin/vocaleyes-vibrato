@@ -15,10 +15,15 @@ function AudioProcessor(sampleRate, pitchFrameDuration, vibratoFrameDuration) {
     this.pitchAnalyzer = new PitchAnalyzer(sampleRate);
     this.vibratoAnalyzer = new PitchAnalyzer(this.sampleRate / this.frameSize);
 
+    this.timestamps = [];
     this.frames = [];
     this.pitches = [];
     this.vibratoRates = [];
     this.vibratoWidths = [];
+}
+
+AudioProcessor.prototype.getTimestamps = function() {
+    return this.timestamps;
 }
 
 AudioProcessor.prototype.getPitches = function() {
@@ -44,6 +49,7 @@ AudioProcessor.prototype.currentPitch = function() {
  * Resets all historical frames, pitches, and vibrato results.
  */
 AudioProcessor.prototype.clear = function() {
+    this.timestamps = [];
     this.frames = [];
     this.pitches = [];
     this.vibratoRates = [];
@@ -53,7 +59,8 @@ AudioProcessor.prototype.clear = function() {
 /*
  * Processes a new frame, storing all info in frames, pitches, vibratoRates, and vibratoWidths.
  */
-AudioProcessor.prototype.process = function(frame) {
+AudioProcessor.prototype.process = function(frame, timestamp) {
+    this.timestamps.push(timestamp);
     this.frames.push(frame);
     this.pitchProcess();
     this.vibratoProcess();
@@ -68,8 +75,15 @@ AudioProcessor.prototype.pitchProcess = function() {
     this.pitchAnalyzer.process();
     var tone = this.pitchAnalyzer.findTone();
 
+    // Uses 0 for first pitch if no tone is detected, otherwise uses 0.
+    // TODO: Allow for no pitch (rather than 0 Hz)
     if (tone === null) {
-        this.pitches.push(this.pitches[this.pitches.length - 1]);
+        if (this.pitches.length == 0) {
+            this.pitches.push(0);
+        }
+        else {
+            this.pitches.push(this.pitches[this.pitches.length - 1]);
+        }
     }
     else {
         this.pitches.push(tone.freq);
