@@ -6,6 +6,7 @@ app = Flask(__name__)
 
 # This is the path to the upload directory
 app.config['SCRIPTS_FOLDER'] = 'scripts'
+app.config['DATA_FOLDER'] = 'data'
 
 
 # For a given file, return whether it's an allowed type or not
@@ -20,8 +21,13 @@ def index():
 
 
 @app.route('/scripts/<filename>', methods=['GET'])
-def static_file(filename):
+def script_file(filename):
     return send_from_directory(app.config['SCRIPTS_FOLDER'], filename)
+
+
+@app.route('/data/<filename>', methods=['GET'])
+def static_file(filename):
+    return send_from_directory(app.config['DATA_FOLDER'], filename)
 
 
 if __name__ == '__main__':
