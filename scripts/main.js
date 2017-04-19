@@ -62,7 +62,6 @@ var audioSetup = function(context, source) {
     processorNode.onaudioprocess = function(e) {
 
         if (!stopped) {
-
             // Get the audio buffer
             var audioFrame = new Float32Array(frameSize);
             e.inputBuffer.copyFromChannel(audioFrame, 0);
@@ -71,7 +70,9 @@ var audioSetup = function(context, source) {
             audioProcessor.process(audioFrame, context.currentTime);
 
             // TODO: draw chart for every frame or using setInterval?
-            drawChart(audioProcessor.getPitches());
+            visualizePitch(audioProcessor.getPitches());
+				    visualizeRate(audioProcessor.getVibratoRates());
+				    visualizeWidth(audioProcessor.getVibratoWidths());
         }
     }
 
@@ -82,23 +83,147 @@ var audioSetup = function(context, source) {
     intervalFunc = setInterval(calcPitch,50);
 }
 
-function drawChart(pitches) {
 
-    var pitchTuples = [];
-    for (var i = 0; i < pitches.length; i++) {
-        pitchTuples.push([i, pitches[i]])
-    }
-    var data = google.visualization.arrayToDataTable([['Time', 'Pitch']].concat(pitchTuples));
+var pitchChartName = 'pitch_chart_div';
+var rateChartName = 'rate_chart_div';
+var widthChartName = 'width_chart_div';
+var maxDataPoints = 70;
+function visualizePitch(pitches) {
+	if(pitches.length <= maxDataPoints) {
+		updatePitchChart(pitches, audioProcessor.getTimestamps());
+	}
+	else {
+		var boundedPitch = pitches.slice(pitches.length - maxDataPoints, pitches.length);
+		updatePitchChart(boundedPitch, audioProcessor.getTimestamps());
+	}
+}
 
-    var options = {
-        title: 'Pitch',
-        curveType: 'function',
-        legend: 'none'
-    };
+function updatePitchChart(rows, times) {
+	var data = new google.visualization.DataTable();
+	data.addColumn('number', 'X');
+	data.addColumn('number', '');
+	
+	var add = [];
+	for(var i = 0; i < maxDataPoints; i++) {
+		add.push([i, rows[i]]);
+	}
+	
+	data.addRows(add);
 
-    var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
-//    var chart = new google.visualization.ScatterChart(document.getElementById('curve_chart'));
-    chart.draw(data, options);
+	var options = {
+		title: 'Pitch',
+		hAxis: {
+		  title: 'Time'
+		},
+		vAxis: {
+		  title: 'Pitch (Hz)'
+		},
+		//use this to smooth line
+		//curveType: 'function'
+	}
+
+	var chart = new google.visualization.LineChart(document.getElementById(pitchChartName));
+	chart.draw(data, options);
+}
+
+function visualizeRate(rates) {
+	if(rates.length <= maxDataPoints) {
+		updateRateChart(rates, audioProcessor.getTimestamps());
+	}
+	else {
+		var boundedPitch = rates.slice(rates.length - maxDataPoints, rates.length);
+		updateRateChart(boundedPitch, audioProcessor.getTimestamps());
+	}
+}
+
+function updateRateChart(rows, times) {
+	var data = new google.visualization.DataTable();
+	data.addColumn('number', 'X');
+	data.addColumn('number', '');
+	
+	var add = [];
+	for(var i = 0; i < maxDataPoints; i++) {
+		add.push([i, rows[i]]);
+	}
+	
+	data.addRows(add);
+
+	var options = {
+		title: 'Vibrato Rate',
+		hAxis: {
+		  title: 'Time'
+		},
+		vAxis: {
+		  title: 'Rate'
+		},
+		colors: ['green'],
+		//use this to smooth line
+		curveType: 'function'
+	}
+
+	var chart = new google.visualization.LineChart(document.getElementById(rateChartName));
+	chart.draw(data, options);
+}
+
+function visualizeWidth(widths) {
+	if(widths.length <= maxDataPoints) {
+		updateWidthChart(widths, audioProcessor.getTimestamps());
+	}
+	else {
+		var boundedPitch = widths.slice(widths.length - maxDataPoints, widths.length);
+		updateWidthChart(boundedPitch, audioProcessor.getTimestamps());
+	}
+}
+
+function updateWidthChart(rows, times) {
+	var data = new google.visualization.DataTable();
+	data.addColumn('number', 'X');
+	data.addColumn('number', '');
+	
+	var add = [];
+	for(var i = 0; i < maxDataPoints; i++) {
+		add.push([i, rows[i]]);
+	}
+	
+	data.addRows(add);
+
+	var options = {
+		title: 'Vibrato Width',
+		hAxis: {
+		  title: 'Time'
+		},
+		vAxis: {
+		  title: 'Width'
+		},
+		colors: ['red'],
+		//use this to smooth line
+		curveType: 'function'
+	}
+
+	var chart = new google.visualization.LineChart(document.getElementById(widthChartName));
+	chart.draw(data, options);
+}
+
+function updateData(result) {
+	
+	if(pitchData.length + result.length < maxDataPoints) {
+		for(var i = 0; i < result.length; i++) {
+			pitchData.push(result[i]);
+		}
+	}
+	else {
+		var revRes = result.reverse();
+		var revData = pitchData.reverse();
+		var newList = [];
+		for(var i = 0; i < pitchData.length; i++) {
+			revRes.push(revData[i]);
+		}
+		
+		for(var i = 0; i < maxDataPoints; i++) {
+			newList.push(revRes[i]);
+		}
+		pitchData = newList.reverse();
+	}
 }
 
 function calcPitch(){
@@ -150,7 +275,6 @@ stopped = true;
 recordButton.style.display = '';
 statusLabel.style.display = 'none';
 //resultsElem.style.display = 'none';
-google.charts.load('current', {'packages':['corechart']});
-google.charts.setOnLoadCallback(function() { drawChart([0]); });
+
 
 
