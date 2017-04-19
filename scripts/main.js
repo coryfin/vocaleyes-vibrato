@@ -107,51 +107,30 @@ function visualizePitch(pitches) {
 
 function updatePitchChart(pitches, times) {
 
+	var data = new google.visualization.DataTable();
+	data.addColumn('number', 'X');
+	data.addColumn('number', '');
 
-    var pitchTuples = [];
-    for (var i = 0; i < pitches.length; i++) {
-        pitchTuples.push([i, pitches[i]])
-    }
-    var data = google.visualization.arrayToDataTable([['Time', 'Pitch']].concat(pitchTuples));
+	var add = [];
+	for(var i = 0; i < maxDataPoints; i++) {
+		add.push([i, pitches[i]]);
+	}
 
-    var options = {
-        title: 'Pitch',
-        curveType: 'function',
-        legend: 'none'
-    };
+	data.addRows(add);
 
-    var chart = new google.visualization.LineChart(document.getElementById(pitchChartName));
-//    var chart = new google.visualization.ScatterChart(document.getElementById('curve_chart'));
-    chart.draw(data, options);
+	var options = {
+		title: 'Pitch',
+		vAxis: {
+		  title: 'Pitch (Hz)'
+		},
+		legend: 'none',
+		//use this to smooth line
+		curveType: 'function',
+	}
 
-
-//	var data = new google.visualization.DataTable();
-//	data.addColumn('number', 'X');
-//	data.addColumn('number', '');
-//
-//	var add = [];
-//	for(var i = 0; i < maxDataPoints; i++) {
-//		add.push([times[i], pitches[i]]);
-//	}
-//
-//	data.addRows(add);
-//
-//	var options = {
-//		title: 'Pitch',
-//		hAxis: {
-//		  title: 'Time'
-//		},
-//		vAxis: {
-//		  title: 'Pitch (Hz)'
-//		},
-//		legend: 'none',
-//		//use this to smooth line
-//		curveType: 'function',
-//	}
-//
-//	var chart = new google.visualization.LineChart(document.getElementById(pitchChartName));
-////	var chart = new google.visualization.ScatterChart(document.getElementById(pitchChartName));
-//	chart.draw(data, options);
+	var chart = new google.visualization.LineChart(document.getElementById(pitchChartName));
+//	var chart = new google.visualization.ScatterChart(document.getElementById(pitchChartName));
+	chart.draw(data, options);
 }
 
 function visualizeRate(rates) {
@@ -178,9 +157,6 @@ function updateRateChart(rows, times) {
 
 	var options = {
 		title: 'Vibrato Rate',
-		hAxis: {
-		  title: 'Time'
-		},
 		vAxis: {
 		  title: 'Rate (Hz)'
 		},
@@ -218,9 +194,6 @@ function updateWidthChart(rows, times) {
 
 	var options = {
 		title: 'Vibrato Width',
-		hAxis: {
-		  title: 'Time'
-		},
 		vAxis: {
 		  title: 'Width (Hz)'
 		},
