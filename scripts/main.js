@@ -287,7 +287,7 @@ It takes in a frequency as a 32 bit float
 and should draw this onto the screen somehow
 */
 function drawCurrentPitch(pitch){
-	return true;
+	pitch_name_element = pitchName(pitch);
 }
 
 // Hook up events
