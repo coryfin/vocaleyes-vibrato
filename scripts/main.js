@@ -62,7 +62,7 @@ var audioSetup = function(context, source) {
     frameSize = audioProcessor.getFrameSize();
     var frameRate = context.sampleRate / frameSize;
     maxDataPoints = Math.round(MAX_WINDOW_WIDTH * frameRate);
-    console.log(frameSize);
+    console.log(frameRate);
 
     var processorNode = context.createScriptProcessor(frameSize, 1, 1);
     processorNode.onaudioprocess = function(e) {
@@ -105,33 +105,52 @@ function visualizePitch(pitches) {
 }
 
 function updatePitchChart(pitches, times) {
-	var data = new google.visualization.DataTable();
-	data.addColumn('number', 'X');
-	data.addColumn('number', '');
 
-	var add = [];
-	for(var i = 0; i < maxDataPoints; i++) {
-		add.push([times[i], pitches[i]]);
-	}
 
-	data.addRows(add);
+    var pitchTuples = [];
+    for (var i = 0; i < pitches.length; i++) {
+        pitchTuples.push([i, pitches[i]])
+    }
+    var data = google.visualization.arrayToDataTable([['Time', 'Pitch']].concat(pitchTuples));
 
-	var options = {
-		title: 'Pitch',
-		hAxis: {
-		  title: 'Time'
-		},
-		vAxis: {
-		  title: 'Pitch (Hz)'
-		},
-		legend: 'none',
-		//use this to smooth line
-		curveType: 'function',
-	}
+    var options = {
+        title: 'Pitch',
+        curveType: 'function',
+        legend: 'none'
+    };
 
-	var chart = new google.visualization.LineChart(document.getElementById(pitchChartName));
-//	var chart = new google.visualization.ScatterChart(document.getElementById(pitchChartName));
-	chart.draw(data, options);
+    var chart = new google.visualization.LineChart(document.getElementById(pitchChartName));
+//    var chart = new google.visualization.ScatterChart(document.getElementById('curve_chart'));
+    chart.draw(data, options);
+
+
+//	var data = new google.visualization.DataTable();
+//	data.addColumn('number', 'X');
+//	data.addColumn('number', '');
+//
+//	var add = [];
+//	for(var i = 0; i < maxDataPoints; i++) {
+//		add.push([times[i], pitches[i]]);
+//	}
+//
+//	data.addRows(add);
+//
+//	var options = {
+//		title: 'Pitch',
+//		hAxis: {
+//		  title: 'Time'
+//		},
+//		vAxis: {
+//		  title: 'Pitch (Hz)'
+//		},
+//		legend: 'none',
+//		//use this to smooth line
+//		curveType: 'function',
+//	}
+//
+//	var chart = new google.visualization.LineChart(document.getElementById(pitchChartName));
+////	var chart = new google.visualization.ScatterChart(document.getElementById(pitchChartName));
+//	chart.draw(data, options);
 }
 
 function visualizeRate(rates) {
