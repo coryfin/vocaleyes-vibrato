@@ -27,7 +27,7 @@
         </div>
     </div>
 	<div class="row">
-		<div id="pitch_chart_div"></div>
+		<div id="pitch_chart_div" style="height: 300px"></div>
 	</div>
 	<div class="row">
 		<div id="rate_chart_div"></div>
@@ -52,7 +52,7 @@
 <script src="../scripts/utils.js"></script>	
 
 <script>
-	google.charts.load('current', {packages: ['corechart', 'line']});
+	google.charts.load('current', {packages: ['corechart']});
 	google.charts.setOnLoadCallback(loadCharts);
 
 	function loadCharts() {

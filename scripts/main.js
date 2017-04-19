@@ -62,6 +62,7 @@ var audioSetup = function(context, source) {
     frameSize = audioProcessor.getFrameSize();
     var frameRate = context.sampleRate / frameSize;
     maxDataPoints = Math.round(MAX_WINDOW_WIDTH * frameRate);
+    maxDataPoints = 20;
     console.log(frameRate);
 
     var processorNode = context.createScriptProcessor(frameSize, 1, 1);
