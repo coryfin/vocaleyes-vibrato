@@ -21,8 +21,8 @@ const MAX_WIDTH = 1; // semitones
 function AudioProcessor(sampleRate) {
     this.sampleRate = sampleRate;
     this.frameSize = nextPow2(PITCH_FRAME_DURATION * sampleRate);
-    this.pitchSampleRate = this.sampleRate / this.frameSize;
-    this.vibratoFrameSize = nextPow2(VIBRATO_FRAME_DURATION * this.pitchSampleRate);
+    this.frameRate = this.sampleRate / this.frameSize;
+    this.vibratoFrameSize = nextPow2(VIBRATO_FRAME_DURATION * this.frameRate);
 
     this.timestamps = [];
     this.frames = [];
@@ -98,7 +98,7 @@ AudioProcessor.prototype.pitchProcess = function() {
  */
 AudioProcessor.prototype.smoothPitchContour = function() {
 
-    var toneFrameSize = Math.round(MIN_TONE_DURATION * this.pitchSampleRate);
+    var toneFrameSize = Math.round(MIN_TONE_DURATION * this.frameRate);
     var end = this.pitches.length - 1;
     var start = end - toneFrameSize;
 

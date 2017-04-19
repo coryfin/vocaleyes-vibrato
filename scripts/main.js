@@ -4,10 +4,13 @@ let resultsElem = document.getElementById('results');
 let audioElem = document.getElementById('audio');
 let visualizationElem = document.getElementById('visualization');
 
+const MAX_WINDOW_WIDTH = 1; // seconds
+
 let stopped;
 let recorder;
 let audioProcessor;
 let frameSize;
+let maxDataPoints;
 
 let intervalFunc;
 let previousPitch;
@@ -57,6 +60,9 @@ var audioSetup = function(context, source) {
     audioProcessor = new AudioProcessor(context.sampleRate);
 
     frameSize = audioProcessor.getFrameSize();
+    var frameRate = context.sampleRate / frameSize;
+    maxDataPoints = Math.round(MAX_WINDOW_WIDTH * frameRate);
+    console.log(frameSize);
 
     var processorNode = context.createScriptProcessor(frameSize, 1, 1);
     processorNode.onaudioprocess = function(e) {
@@ -86,7 +92,6 @@ var audioSetup = function(context, source) {
 var pitchChartName = 'pitch_chart_div';
 var rateChartName = 'rate_chart_div';
 var widthChartName = 'width_chart_div';
-var maxDataPoints = 70;
 
 function visualizePitch(pitches) {
 	if(pitches.length <= maxDataPoints) {
@@ -94,20 +99,21 @@ function visualizePitch(pitches) {
 	}
 	else {
 		var boundedPitch = pitches.slice(pitches.length - maxDataPoints, pitches.length);
-		updatePitchChart(boundedPitch, audioProcessor.getTimestamps());
+		var boundedTimestamps = audioProcessor.getTimestamps().slice(pitches.length - maxDataPoints, pitches.length);
+		updatePitchChart(boundedPitch, boundedTimestamps);
 	}
 }
 
-function updatePitchChart(rows, times) {
+function updatePitchChart(pitches, times) {
 	var data = new google.visualization.DataTable();
 	data.addColumn('number', 'X');
 	data.addColumn('number', '');
-	
+
 	var add = [];
 	for(var i = 0; i < maxDataPoints; i++) {
-		add.push([i, rows[i]]);
+		add.push([times[i], pitches[i]]);
 	}
-	
+
 	data.addRows(add);
 
 	var options = {
@@ -118,8 +124,9 @@ function updatePitchChart(rows, times) {
 		vAxis: {
 		  title: 'Pitch (Hz)'
 		},
+		legend: 'none',
 		//use this to smooth line
-		curveType: 'function'
+		curveType: 'function',
 	}
 
 	var chart = new google.visualization.LineChart(document.getElementById(pitchChartName));
@@ -157,7 +164,8 @@ function updateRateChart(rows, times) {
 		vAxis: {
 		  title: 'Rate (Hz)'
 		},
-		colors: ['green'],
+        legend: 'none',
+        colors: ['green'],
 		//use this to smooth line
 		curveType: 'function'
 	}
@@ -196,6 +204,7 @@ function updateWidthChart(rows, times) {
 		vAxis: {
 		  title: 'Width (Hz)'
 		},
+		legend: 'none',
 		colors: ['red'],
 		//use this to smooth line
 		curveType: 'function'
