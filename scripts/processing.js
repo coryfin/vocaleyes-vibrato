@@ -6,11 +6,15 @@
 
 let recentPitch;//global access in case setInterval isn't good enough to use
 
-function AudioProcessor(sampleRate, pitchFrameDuration, vibratoFrameDuration) {
+const MIN_TONE_DURATION = 0.2;
+const PITCH_FRAME_DURATION = 0.02; // 2 cycles of 100 Hz tone
+const VIBRATO_FRAME_DURATION = 0.2; // 1 cycles of 2 Hz vibrato. See https://en.wikipedia.org/wiki/Vibrato#Typical_rate_and_extent_of_vibrato
+
+function AudioProcessor(sampleRate) {
     this.sampleRate = sampleRate;
-    this.frameSize = nextPow2(pitchFrameDuration * sampleRate);
-    var pitchSampleRate = this.sampleRate / this.frameSize;
-    this.vibratoFrameSize = nextPow2(vibratoFrameDuration * pitchSampleRate);
+    this.frameSize = nextPow2(PITCH_FRAME_DURATION * sampleRate);
+    this.pitchSampleRate = this.sampleRate / this.frameSize;
+    this.vibratoFrameSize = nextPow2(VIBRATO_FRAME_DURATION * this.pitchSampleRate);
 
     this.pitchAnalyzer = new PitchAnalyzer(sampleRate);
     this.vibratoAnalyzer = new PitchAnalyzer(this.sampleRate / this.frameSize);
@@ -20,6 +24,10 @@ function AudioProcessor(sampleRate, pitchFrameDuration, vibratoFrameDuration) {
     this.pitches = [];
     this.vibratoRates = [];
     this.vibratoWidths = [];
+}
+
+AudioProcessor.prototype.getFrameSize = function() {
+    return this.frameSize;
 }
 
 AudioProcessor.prototype.getTimestamps = function() {
@@ -70,23 +78,48 @@ AudioProcessor.prototype.process = function(frame, timestamp) {
  * Finds pitch for the latest frame buffer and adds it to the pitch array.
  */
 AudioProcessor.prototype.pitchProcess = function() {
-
-    this.pitchAnalyzer.input(this.frames[this.frames.length - 1]);
-    this.pitchAnalyzer.process();
-    var tone = this.pitchAnalyzer.findTone();
-
-    // Uses 0 for first pitch if no tone is detected, otherwise uses 0.
-    // TODO: Allow for no pitch (rather than 0 Hz)
-    if (tone === null) {
-        if (this.pitches.length == 0) {
-            this.pitches.push(0);
-        }
-        else {
-            this.pitches.push(this.pitches[this.pitches.length - 1]);
-        }
+    var result = detectPitch(this.frames[this.frames.length - 1]);
+    if (result != null && result.freq != -1) {
+        this.pitches.push(result.freq);
     }
-    else {
-        this.pitches.push(tone.freq);
+
+    this.smoothPitchContour();
+}
+
+/*
+ * Smooths the latest frame of duration MIN_TONE_DURATION
+ */
+AudioProcessor.prototype.smoothPitchContour = function() {
+
+    var toneFrameSize = Math.round(MIN_TONE_DURATION * this.pitchSampleRate);
+    var end = this.pitches.length - 1;
+    var start = end - toneFrameSize;
+
+    // If the bookends of the tone frame are within a quarter tone, average out the intermediate pitch values
+    var semitoneDiff = Math.abs(freq2Semitones(this.pitches[start]) - freq2Semitones(this.pitches[end]))
+    if (semitoneDiff < 0.5) {
+        var avePitch = (this.pitches[start] + this.pitches[end]) / 2;
+        for (var i = start + 1; i < end; i++) {
+
+            semitoneDiff = Math.abs(freq2Semitones(avePitch) - freq2Semitones(this.pitches[i]))
+            if (semitoneDiff > 1) {
+                if (this.pitches[i] > avePitch) {
+                    var n = Math.round(this.pitches[i] / avePitch);
+                    this.pitches[i] /= n;
+                }
+                else if (this.pitches[i] < avePitch) {
+                    var n = Math.round(avePitch / this.pitches[i]);
+                    this.pitches[i] *= n;
+                }
+            }
+        }
+
+        for (var i = start + 1; i < end; i++) {
+            // If its still not within a semitone, make it the average of its neighbors
+            if (semitoneDiff > 1) {
+                this.pitches[i] = (this.pitches[i - 1] + this.pitches[i + 1]) / 2;
+            }
+        }
     }
 }
 
@@ -103,21 +136,25 @@ AudioProcessor.prototype.vibratoProcess = function() {
     else {
         var pitchFrame = this.pitches.slice(this.pitches.length - this.vibratoFrameSize, this.pitches.length);
 
+        this.vibratoWidths.push(Math.max(...pitchFrame) - Math.min(...pitchFrame));
+
         // Normalize pitches (zero out the DC offset)
-        var meanPitch = mean(pitchFrame);
-        var normalizedPitchFrame = pitchFrame.map(function(val) { return val - meanPitch; })
+        var normalizedPitchFrame = normalize(pitchFrame);
 
-        this.vibratoAnalyzer.input(normalizedPitchFrame);
-        this.vibratoAnalyzer.process();
-        var tone = this.vibratoAnalyzer.findTone();
+        // Peak-picking algorithm
+        var peakIndices = [];
+        for (var i = 1; i < normalizedPitchFrame.length - 1; i++) {
+            if (normalizedPitchFrame[i] > normalizedPitchFrame[i - 1] &&
+                    normalizedPitchFrame[i] > normalizedPitchFrame[i + 1]) {
+                peakIndices.push(i);
+            }
+        }
 
-        if (tone === null) {
-            this.vibratoRates.push(0);
-            this.vibratoWidths.push(0);
-        }
-        else {
-            this.vibratoRates.push(tone.freq);
-            this.vibratoWidths.push(tone.db);
-        }
+        var frameStart = this.frames.length - this.vibratoFrameSize - 1;
+        var start = frameStart + peakIndices[0];
+        var end = frameStart + peakIndices[peakIndices.length - 1];
+        var duration = this.timestamps[end] - this.timestamps[start];
+        var rate = (peakIndices.length - 1) / duration;
+        this.vibratoRates.push(rate);
     }
 }

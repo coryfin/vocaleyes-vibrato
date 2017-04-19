@@ -12,9 +12,18 @@ let frameSize;
 let intervalFunc;
 let previousPitch;
 
-// Pitch recognition params
-let frameDuration = 0.02; // 2 cycles of 100 Hz tone
-let vibratoFrameDuration = 1; // 2 cycles of 2 Hz vibrato. See https://en.wikipedia.org/wiki/Vibrato#Typical_rate_and_extent_of_vibrato
+var play = function() {
+
+    stopped = false;
+    var context = new AudioContext();
+    var sourceNode = context.createMediaElementSource(audioElem);
+    sourceNode.connect(context.destination);
+    audioSetup(context, sourceNode);
+}
+
+var stopPlaying = function() {
+    stopped = true;
+}
 
 var record = function() {
     navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function(stream) {
@@ -25,58 +34,53 @@ var record = function() {
 //        resultsElem.style.display = 'none';
 
         var context = new AudioContext();
-        var mediaStreamSource = context.createMediaStreamSource(stream);
-        recorder = new Recorder(mediaStreamSource);
+        var sourceNode = context.createMediaStreamSource(stream);
+        audioSetup(context, sourceNode);
+
+        recorder = new Recorder(sourceNode);
         recorder.record();
-
-        frameSize = nextPow2(frameDuration * context.sampleRate);
-
-        audioProcessor = new AudioProcessor(context.sampleRate, frameDuration, vibratoFrameDuration);
-
-        var analyzer = context.createAnalyser();
-        var processorNode = context.createScriptProcessor(frameSize, 1, 1);
-        processorNode.onaudioprocess = function(e) {
-
-            if (!stopped) {
-
-                // Get the audio buffer
-                var audioBuffer = new Float32Array(frameSize);
-                analyzer.getFloatTimeDomainData(audioBuffer);
-
-                // Save buffer to frame
-                var audioFrame = new Float32Array(frameSize);
-                for (var i = 0; i < audioBuffer.length; i++) {
-                    audioFrame[i] = audioBuffer[i];
-                }
-
-                // Process frame
-                audioProcessor.process(audioFrame, context.currentTime);
-
-                // TODO: draw chart for every frame or using setInterval?
-                visualizePitch(audioProcessor.getPitches());
-				visualizeRate(audioProcessor.getVibratoRates());
-				visualizeWidth(audioProcessor.getVibratoWidths());
-            }
-        }
-
-        // Connect the source to the processors
-        mediaStreamSource.connect(analyzer);
-        mediaStreamSource.connect(processorNode);
-
-        processorNode.connect(context.destination);
-
-		intervalFunc = setInterval(calcPitch,50);
 	})
 }
 
-var stop = function() {
+var stopRecording = function() {
     recorder.stop();
     recorder.exportWAV(function(blob) {
         audioElem.src = window.URL.createObjectURL(blob);
     });
-    intervalFunc.clearInterval();
+    clearInterval(intervalFunc);
 	stopped = true;
     recordButton.innerHTML = 'Record';
+}
+
+var audioSetup = function(context, source) {
+
+    audioProcessor = new AudioProcessor(context.sampleRate);
+
+    frameSize = audioProcessor.getFrameSize();
+
+    var processorNode = context.createScriptProcessor(frameSize, 1, 1);
+    processorNode.onaudioprocess = function(e) {
+
+        if (!stopped) {
+            // Get the audio buffer
+            var audioFrame = new Float32Array(frameSize);
+            e.inputBuffer.copyFromChannel(audioFrame, 0);
+
+            // Process frame
+            audioProcessor.process(audioFrame, context.currentTime);
+
+            // TODO: draw chart for every frame or using setInterval?
+            visualizePitch(audioProcessor.getPitches());
+				    visualizeRate(audioProcessor.getVibratoRates());
+				    visualizeWidth(audioProcessor.getVibratoWidths());
+        }
+    }
+
+    // Connect the audio graph
+    source.connect(processorNode);
+    processorNode.connect(context.destination);
+
+    intervalFunc = setInterval(calcPitch,50);
 }
 
 
@@ -220,8 +224,6 @@ function updateData(result) {
 		}
 		pitchData = newList.reverse();
 	}
-	
-    //console.log(pitchData);
 }
 
 function calcPitch(){
@@ -261,8 +263,12 @@ function drawCurrentPitch(pitch){
 // Hook up events
 recordButton.addEventListener('click', function() {
     if (stopped) record();
-    else stop();
+    else stopRecording();
 })
+
+audioElem.onplay = play;
+audioElem.onended = stopPlaying;
+audioElem.onpause = stopPlaying;
 
 // Init
 stopped = true;
