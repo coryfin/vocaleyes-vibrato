@@ -71,8 +71,8 @@ var audioSetup = function(context, source) {
 
             // TODO: draw chart for every frame or using setInterval?
             visualizePitch(audioProcessor.getPitches());
-				    visualizeRate(audioProcessor.getVibratoRates());
-				    visualizeWidth(audioProcessor.getVibratoWidths());
+            visualizeRate(audioProcessor.getVibratoRates());
+            visualizeWidth(audioProcessor.getVibratoWidths());
         }
     }
 
@@ -83,11 +83,11 @@ var audioSetup = function(context, source) {
     intervalFunc = setInterval(calcPitch,50);
 }
 
-
 var pitchChartName = 'pitch_chart_div';
 var rateChartName = 'rate_chart_div';
 var widthChartName = 'width_chart_div';
 var maxDataPoints = 70;
+
 function visualizePitch(pitches) {
 	if(pitches.length <= maxDataPoints) {
 		updatePitchChart(pitches, audioProcessor.getTimestamps());
@@ -119,10 +119,11 @@ function updatePitchChart(rows, times) {
 		  title: 'Pitch (Hz)'
 		},
 		//use this to smooth line
-		//curveType: 'function'
+		curveType: 'function'
 	}
 
 	var chart = new google.visualization.LineChart(document.getElementById(pitchChartName));
+//	var chart = new google.visualization.ScatterChart(document.getElementById(pitchChartName));
 	chart.draw(data, options);
 }
 
@@ -154,7 +155,7 @@ function updateRateChart(rows, times) {
 		  title: 'Time'
 		},
 		vAxis: {
-		  title: 'Rate'
+		  title: 'Rate (Hz)'
 		},
 		colors: ['green'],
 		//use this to smooth line
@@ -193,7 +194,7 @@ function updateWidthChart(rows, times) {
 		  title: 'Time'
 		},
 		vAxis: {
-		  title: 'Width'
+		  title: 'Width (Hz)'
 		},
 		colors: ['red'],
 		//use this to smooth line

@@ -8,16 +8,21 @@ let recentPitch;//global access in case setInterval isn't good enough to use
 
 const MIN_TONE_DURATION = 0.2;
 const PITCH_FRAME_DURATION = 0.02; // 2 cycles of 100 Hz tone
-const VIBRATO_FRAME_DURATION = 0.2; // 1 cycles of 2 Hz vibrato. See https://en.wikipedia.org/wiki/Vibrato#Typical_rate_and_extent_of_vibrato
+const VIBRATO_FRAME_DURATION = 0.1; // 1 cycles of 2 Hz vibrato. See https://en.wikipedia.org/wiki/Vibrato#Typical_rate_and_extent_of_vibrato
+
+// Bounds on pitch, rate, and width estimates
+const MIN_PITCH = 75;
+const MAX_PITCH = 3000;
+const MIN_RATE = 0;
+const MAX_RATE = 10;
+const MIN_WIDTH = 0;
+const MAX_WIDTH = 1; // semitones
 
 function AudioProcessor(sampleRate) {
     this.sampleRate = sampleRate;
     this.frameSize = nextPow2(PITCH_FRAME_DURATION * sampleRate);
     this.pitchSampleRate = this.sampleRate / this.frameSize;
     this.vibratoFrameSize = nextPow2(VIBRATO_FRAME_DURATION * this.pitchSampleRate);
-
-    this.pitchAnalyzer = new PitchAnalyzer(sampleRate);
-    this.vibratoAnalyzer = new PitchAnalyzer(this.sampleRate / this.frameSize);
 
     this.timestamps = [];
     this.frames = [];
@@ -49,7 +54,6 @@ AudioProcessor.prototype.getVibratoWidths = function() {
 AudioProcessor.prototype.currentPitch = function() {
 	recentPitch = this.pitches[this.pitches.length - 1];
 	return this.pitches[this.pitches.length - 1];
-	
 }
 
 
@@ -82,8 +86,11 @@ AudioProcessor.prototype.pitchProcess = function() {
     if (result != null && result.freq != -1) {
         this.pitches.push(result.freq);
     }
+    else {
+        this.pitches.push(-1);
+    }
 
-    this.smoothPitchContour();
+//    this.smoothPitchContour();
 }
 
 /*
@@ -130,13 +137,20 @@ AudioProcessor.prototype.smoothPitchContour = function() {
 AudioProcessor.prototype.vibratoProcess = function() {
 
     if (this.pitches.length < this.vibratoFrameSize) {
-        this.vibratoRates.push(0);
-        this.vibratoWidths.push(0);
+        this.vibratoRates.push(-1);
+        this.vibratoWidths.push(-1);
     }
     else {
         var pitchFrame = this.pitches.slice(this.pitches.length - this.vibratoFrameSize, this.pitches.length);
 
-        this.vibratoWidths.push(Math.max(...pitchFrame) - Math.min(...pitchFrame));
+        var width = Math.max(...pitchFrame) - Math.min(...pitchFrame);
+        var semitoneWidth = freq2Semitones(Math.max(...pitchFrame)) - freq2Semitones(Math.min(...pitchFrame));
+        if (MIN_WIDTH <= semitoneWidth  && semitoneWidth <= MAX_WIDTH) {
+            this.vibratoWidths.push(Math.max(...pitchFrame) - Math.min(...pitchFrame));
+        }
+        else {
+            this.vibratoWidths.push(-1);
+        }
 
         // Normalize pitches (zero out the DC offset)
         var normalizedPitchFrame = normalize(pitchFrame);
@@ -155,6 +169,11 @@ AudioProcessor.prototype.vibratoProcess = function() {
         var end = frameStart + peakIndices[peakIndices.length - 1];
         var duration = this.timestamps[end] - this.timestamps[start];
         var rate = (peakIndices.length - 1) / duration;
-        this.vibratoRates.push(rate);
+        if (MIN_RATE <= rate && rate <= MAX_RATE) {
+            this.vibratoRates.push(rate);
+        }
+        else {
+            this.vibratoRates.push(-1);
+        }
     }
 }
