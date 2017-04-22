@@ -7,8 +7,8 @@
 let recentPitch;//global access in case setInterval isn't good enough to use
 
 const MIN_TONE_DURATION = 0.2;
-const PITCH_FRAME_DURATION = 0.03; // 2 cycles of 100 Hz tone
-const VIBRATO_FRAME_DURATION = 0.2; // 1 cycles of 2 Hz vibrato. See https://en.wikipedia.org/wiki/Vibrato#Typical_rate_and_extent_of_vibrato
+const PITCH_FRAME_DURATION = 0.03; // 3 cycles of 100 Hz tone
+const VIBRATO_FRAME_DURATION = 0.5; // 2.5 cycles of 5 Hz vibrato. See https://en.wikipedia.org/wiki/Vibrato#Typical_rate_and_extent_of_vibrato
 
 // Bounds on pitch, rate, and width estimates
 const MIN_PITCH = 75;
