@@ -35,7 +35,7 @@ Visualizer.prototype.updatePitchChart = function(pitches, times) {
     var buffer_y = (max_y - min_y) / 2;
 
     this.pitchChart.options.axisY.minimum = min_y - buffer_y;
-    this.pitchChart.options.axisY.minimum = max_y + buffer_y;
+    this.pitchChart.options.axisY.maximum = max_y + buffer_y;
 
     this.updateChart(this.pitchChart, 'Pitch', pitches, times);
 }
