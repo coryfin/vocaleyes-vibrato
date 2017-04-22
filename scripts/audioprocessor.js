@@ -12,9 +12,9 @@ const VIBRATO_FRAME_DURATION = 0.2; // 1 cycles of 2 Hz vibrato. See https://en.
 
 // Bounds on pitch, rate, and width estimates
 const MIN_PITCH = 75;
-const MAX_PITCH = 1000;
+const MAX_PITCH = 3000;
 const MIN_RATE = 0;
-const MAX_RATE = 12;
+const MAX_RATE = 15;
 const MIN_WIDTH = 0;
 const MAX_WIDTH = 1; // semitones
 

@@ -17,7 +17,7 @@ var initChart = function(chartName, chartTitle, yMin, yMax) {
             dataPoints: []
             }
         ],
-        yAxis: {
+        axisY: {
             minimum: yMin,
             maximum: yMax
         }
@@ -29,36 +29,36 @@ Visualizer.prototype.setMaxDataPoints = function(maxDataPoints) {
 }
 
 Visualizer.prototype.updatePitchChart = function(pitches, times) {
-    this.updateChart(this.pitchChart, 'Pitch', 'Pitch (Hz)', ['blue'], pitches, times);
+
+    var min_y = Math.min(...pitches);
+    var max_y = Math.max(...pitches);
+    var buffer_y = (max_y - min_y) / 2;
+
+    this.pitchChart.options.axisY.minimum = min_y - buffer_y;
+    this.pitchChart.options.axisY.minimum = max_y + buffer_y;
+
+    this.updateChart(this.pitchChart, 'Pitch', pitches, times);
 }
 
 Visualizer.prototype.updateRateChart = function(rates, times) {
-    this.updateChart(this.rateChart, 'Vibrato Rate', 'Rate (Hz)', ['green'], rates, times);
+    this.updateChart(this.rateChart, 'Vibrato Rate', rates, times);
 }
 
 Visualizer.prototype.updateWidthChart = function(widths, times) {
-    this.updateChart(this.widthChart, 'Vibrato Width', 'Width (Hz)', ['red'], widths, times);
+    this.updateChart(this.widthChart, 'Vibrato Width', widths, times);
 }
 
-Visualizer.prototype.updateChart = function(chart, chartTitle, chartLabel, colors, rows, times) {
+Visualizer.prototype.updateChart = function(chart, chartTitle, rows, times) {
 
 	if(rows.length > this.maxDataPoints) {
 		rows = rows.slice(rows.length - maxDataPoints, rows.length);
 		times = times.slice(times.length - maxDataPoints, times.length);
 	}
 
-    var min_y = Math.min(...rows);
-    var max_y = Math.max(...rows);
-    var buffer_y = (max_y - min_y) / 2;
-
     var dataPoints = [];
     for (var i = 0; i < rows.length; i++) {
         dataPoints.push({ x: i, y: rows[i] })
     }
-//    chart.options.axisY = {
-//        minimum: min_y - buffer_y,
-//        maximum: max_y + buffer_y
-//    }
     chart.options.data[0] = {
         type: "spline",
         dataPoints: dataPoints
