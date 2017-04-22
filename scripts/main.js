@@ -1,7 +1,8 @@
 let recordButton = document.getElementById('record');
 let audioElem = document.getElementById('audio');
 
-const MAX_WINDOW_WIDTH = 1; // seconds
+const MAX_WINDOW_WIDTH = 2; // seconds
+const VISUAL_FRAME_RATE = 10; // frames per second
 
 let stopped;
 let recorder;
@@ -16,7 +17,6 @@ let pitchChartName = 'pitch_chart_div';
 let rateChartName = 'rate_chart_div';
 let widthChartName = 'width_chart_div';
 let visualizer = new Visualizer(pitchChartName, rateChartName, widthChartName, maxDataPoints);
-const visualFrameRate = 10;
 
 var play = function() {
 
@@ -86,7 +86,7 @@ var audioSetup = function(context, source) {
     source.connect(processorNode);
     processorNode.connect(context.destination);
 
-    intervalFunc = setInterval(visualize, 1000 / visualFrameRate);
+    intervalFunc = setInterval(visualize, 1000 / VISUAL_FRAME_RATE);
 }
 
 /**
@@ -175,5 +175,4 @@ audioElem.onpause = stopPlaying;
 
 // Init
 stopped = true;
-//google.charts.load('current', {packages: ['corechart']});
-//google.charts.setOnLoadCallback(loadCharts);
+loadCharts();

@@ -1,11 +1,11 @@
 function Visualizer(pitchChartName, rateChartName, widthChartName, maxDataPoints) {
-    this.pitchChart = initChart(pitchChartName, "Vibrato Width");
-    this.rateChart = initChart(rateChartName, "Vibrato Rate");
-    this.widthChart = initChart(widthChartName, "Vibrato Width");
+    this.pitchChart = initChart(pitchChartName, "Pitch", MIN_PITCH, MAX_PITCH);
+    this.rateChart = initChart(rateChartName, "Vibrato Rate", MIN_RATE, MAX_RATE);
+    this.widthChart = initChart(widthChartName, "Vibrato Width", MIN_WIDTH, MAX_WIDTH);
     this.maxDataPoints = maxDataPoints;
 }
 
-var initChart = function(chartName, chartTitle) {
+var initChart = function(chartName, chartTitle, yMin, yMax) {
     return new CanvasJS.Chart(chartName,
     {
         title:{
@@ -16,7 +16,11 @@ var initChart = function(chartName, chartTitle) {
             type: "spline",
             dataPoints: []
             }
-        ]
+        ],
+        yAxis: {
+            minimum: yMin,
+            maximum: yMax
+        }
     });
 }
 
@@ -51,10 +55,10 @@ Visualizer.prototype.updateChart = function(chart, chartTitle, chartLabel, color
     for (var i = 0; i < rows.length; i++) {
         dataPoints.push({ x: i, y: rows[i] })
     }
-    chart.options.axisY = {
-        minimum: min_y - buffer_y,
-        maximum: max_y + buffer_y
-    }
+//    chart.options.axisY = {
+//        minimum: min_y - buffer_y,
+//        maximum: max_y + buffer_y
+//    }
     chart.options.data[0] = {
         type: "spline",
         dataPoints: dataPoints
