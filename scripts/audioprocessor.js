@@ -68,10 +68,13 @@ AudioProcessor.prototype.clear = function() {
     this.vibratoWidths = [];
 }
 
+//var count = 0;
 /*
  * Processes a new frame, storing all info in frames, pitches, vibratoRates, and vibratoWidths.
  */
 AudioProcessor.prototype.process = function(frame, timestamp) {
+//    count++;
+//    console.log("processing " + count);
     this.timestamps.push(timestamp);
     this.frames.push(frame);
     this.pitchProcess();
@@ -87,7 +90,7 @@ AudioProcessor.prototype.pitchProcess = function() {
         this.pitches.push(result.freq);
     }
     else {
-        this.pitches.push(-1);
+        this.pitches.push(0);
     }
 
     this.smoothPitchContour();
@@ -149,7 +152,7 @@ AudioProcessor.prototype.vibratoProcess = function() {
             this.vibratoWidths.push(Math.max(...pitchFrame) - Math.min(...pitchFrame));
         }
         else {
-            this.vibratoWidths.push(-1);
+            this.vibratoWidths.push(0);
         }
 
         // Normalize pitches (zero out the DC offset)
@@ -173,7 +176,7 @@ AudioProcessor.prototype.vibratoProcess = function() {
             this.vibratoRates.push(rate);
         }
         else {
-            this.vibratoRates.push(-1);
+            this.vibratoRates.push(0);
         }
     }
 }
