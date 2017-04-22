@@ -1,16 +1,22 @@
 let recordButton = document.getElementById('record');
-let statusLabel = document.getElementById('status');
-let resultsElem = document.getElementById('results');
 let audioElem = document.getElementById('audio');
-let visualizationElem = document.getElementById('visualization');
+
+const MAX_WINDOW_WIDTH = 1; // seconds
 
 let stopped;
 let recorder;
 let audioProcessor;
 let frameSize;
+let maxDataPoints;
 
 let intervalFunc;
 let previousPitch;
+
+let pitchChartName = 'pitch_chart_div';
+let rateChartName = 'rate_chart_div';
+let widthChartName = 'width_chart_div';
+let visualizer = new Visualizer(pitchChartName, rateChartName, widthChartName, maxDataPoints);
+const visualFrameRate = 10;
 
 var play = function() {
 
@@ -23,6 +29,8 @@ var play = function() {
 
 var stopPlaying = function() {
     stopped = true;
+//    visualize();
+    clearInterval(intervalFunc);
 }
 
 var record = function() {
@@ -31,7 +39,6 @@ var record = function() {
         // Begin recording, update state
         stopped = false;
         recordButton.innerHTML = 'Stop';
-//        resultsElem.style.display = 'none';
 
         var context = new AudioContext();
         var sourceNode = context.createMediaStreamSource(stream);
@@ -52,27 +59,26 @@ var stopRecording = function() {
     recordButton.innerHTML = 'Record';
 }
 
+var count = 0;
 var audioSetup = function(context, source) {
 
     audioProcessor = new AudioProcessor(context.sampleRate);
 
     frameSize = audioProcessor.getFrameSize();
+    var frameRate = context.sampleRate / frameSize;
+    maxDataPoints = Math.round(MAX_WINDOW_WIDTH * frameRate);
+    visualizer.setMaxDataPoints(maxDataPoints);
 
     var processorNode = context.createScriptProcessor(frameSize, 1, 1);
     processorNode.onaudioprocess = function(e) {
-
         if (!stopped) {
-            // Get the audio buffer
+            count++;
+//            console.log("Processing frame " + count);
+
+            // Get the audio buffer and process the frame
             var audioFrame = new Float32Array(frameSize);
             e.inputBuffer.copyFromChannel(audioFrame, 0);
-
-            // Process frame
-            audioProcessor.process(audioFrame, context.currentTime);
-
-            // TODO: draw chart for every frame or using setInterval?
-            visualizePitch(audioProcessor.getPitches());
-				    visualizeRate(audioProcessor.getVibratoRates());
-				    visualizeWidth(audioProcessor.getVibratoWidths());
+            audioProcessor.process(audioFrame, e.playbackTime);
         }
     }
 
@@ -80,128 +86,25 @@ var audioSetup = function(context, source) {
     source.connect(processorNode);
     processorNode.connect(context.destination);
 
-    intervalFunc = setInterval(calcPitch,50);
+    intervalFunc = setInterval(visualize, 1000 / visualFrameRate);
 }
 
+/**
+ * Draws data from AudioProcessor on the charts.
+ * The Google charts is a bottleneck, so it needs a slower frame rate that the AudioProcessor.
+ */
+function visualize() {
 
-var pitchChartName = 'pitch_chart_div';
-var rateChartName = 'rate_chart_div';
-var widthChartName = 'width_chart_div';
-var maxDataPoints = 70;
-function visualizePitch(pitches) {
-	if(pitches.length <= maxDataPoints) {
-		updatePitchChart(pitches, audioProcessor.getTimestamps());
-	}
-	else {
-		var boundedPitch = pitches.slice(pitches.length - maxDataPoints, pitches.length);
-		updatePitchChart(boundedPitch, audioProcessor.getTimestamps());
-	}
+    visualizer.updatePitchChart(audioProcessor.getPitches(), audioProcessor.getTimestamps());
+    visualizer.updateRateChart(audioProcessor.getVibratoRates(), audioProcessor.getTimestamps());
+    visualizer.updateWidthChart(audioProcessor.getVibratoWidths(), audioProcessor.getTimestamps());
+//    calcPitch();
 }
 
-function updatePitchChart(rows, times) {
-	var data = new google.visualization.DataTable();
-	data.addColumn('number', 'X');
-	data.addColumn('number', '');
-	
-	var add = [];
-	for(var i = 0; i < maxDataPoints; i++) {
-		add.push([i, rows[i]]);
-	}
-	
-	data.addRows(add);
-
-	var options = {
-		title: 'Pitch',
-		hAxis: {
-		  title: 'Time'
-		},
-		vAxis: {
-		  title: 'Pitch (Hz)'
-		},
-		//use this to smooth line
-		//curveType: 'function'
-	}
-
-	var chart = new google.visualization.LineChart(document.getElementById(pitchChartName));
-	chart.draw(data, options);
-}
-
-function visualizeRate(rates) {
-	if(rates.length <= maxDataPoints) {
-		updateRateChart(rates, audioProcessor.getTimestamps());
-	}
-	else {
-		var boundedPitch = rates.slice(rates.length - maxDataPoints, rates.length);
-		updateRateChart(boundedPitch, audioProcessor.getTimestamps());
-	}
-}
-
-function updateRateChart(rows, times) {
-	var data = new google.visualization.DataTable();
-	data.addColumn('number', 'X');
-	data.addColumn('number', '');
-	
-	var add = [];
-	for(var i = 0; i < maxDataPoints; i++) {
-		add.push([i, rows[i]]);
-	}
-	
-	data.addRows(add);
-
-	var options = {
-		title: 'Vibrato Rate',
-		hAxis: {
-		  title: 'Time'
-		},
-		vAxis: {
-		  title: 'Rate'
-		},
-		colors: ['green'],
-		//use this to smooth line
-		curveType: 'function'
-	}
-
-	var chart = new google.visualization.LineChart(document.getElementById(rateChartName));
-	chart.draw(data, options);
-}
-
-function visualizeWidth(widths) {
-	if(widths.length <= maxDataPoints) {
-		updateWidthChart(widths, audioProcessor.getTimestamps());
-	}
-	else {
-		var boundedPitch = widths.slice(widths.length - maxDataPoints, widths.length);
-		updateWidthChart(boundedPitch, audioProcessor.getTimestamps());
-	}
-}
-
-function updateWidthChart(rows, times) {
-	var data = new google.visualization.DataTable();
-	data.addColumn('number', 'X');
-	data.addColumn('number', '');
-	
-	var add = [];
-	for(var i = 0; i < maxDataPoints; i++) {
-		add.push([i, rows[i]]);
-	}
-	
-	data.addRows(add);
-
-	var options = {
-		title: 'Vibrato Width',
-		hAxis: {
-		  title: 'Time'
-		},
-		vAxis: {
-		  title: 'Width'
-		},
-		colors: ['red'],
-		//use this to smooth line
-		curveType: 'function'
-	}
-
-	var chart = new google.visualization.LineChart(document.getElementById(widthChartName));
-	chart.draw(data, options);
+function loadCharts() {
+    visualizer.updatePitchChart([],[]);
+    visualizer.updateRateChart([],[]);
+    visualizer.updateWidthChart([],[]);
 }
 
 function updateData(result) {
@@ -257,7 +160,7 @@ It takes in a frequency as a 32 bit float
 and should draw this onto the screen somehow
 */
 function drawCurrentPitch(pitch){
-	return true;
+	document.getElementById('pitch_name_element').innerHTML = pitchName(pitch);
 }
 
 // Hook up events
@@ -272,9 +175,5 @@ audioElem.onpause = stopPlaying;
 
 // Init
 stopped = true;
-recordButton.style.display = '';
-statusLabel.style.display = 'none';
-//resultsElem.style.display = 'none';
-
-
-
+//google.charts.load('current', {packages: ['corechart']});
+//google.charts.setOnLoadCallback(loadCharts);
