@@ -14,7 +14,7 @@ const VIBRATO_FRAME_DURATION = 0.2; // 1 cycles of 2 Hz vibrato. See https://en.
 const MIN_PITCH = 75;
 const MAX_PITCH = 3000;
 const MIN_RATE = 0;
-const MAX_RATE = 12;
+const MAX_RATE = 15;
 const MIN_WIDTH = 0;
 const MAX_WIDTH = 1; // semitones
 
@@ -161,7 +161,7 @@ AudioProcessor.prototype.vibratoProcess = function() {
         var width = Math.max(...pitchFrame) - Math.min(...pitchFrame);
         var semitoneWidth = freq2Semitones(Math.max(...pitchFrame)) - freq2Semitones(Math.min(...pitchFrame));
         if (MIN_WIDTH <= semitoneWidth && semitoneWidth <= MAX_WIDTH) {
-            this.vibratoWidths.push(Math.max(...pitchFrame) - Math.min(...pitchFrame));
+            this.vibratoWidths.push(semitoneWidth);
         }
         else {
             this.vibratoWidths.push(0);
