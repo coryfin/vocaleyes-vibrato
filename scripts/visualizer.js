@@ -1,58 +1,64 @@
 function Visualizer(pitchChartName, rateChartName, widthChartName, maxDataPoints) {
-    this.pitchChartName = pitchChartName;
-    this.rateChartName = rateChartName;
-    this.widthChartName = widthChartName;
+    this.pitchChart = initChart(pitchChartName, "Vibrato Width");
+    this.rateChart = initChart(rateChartName, "Vibrato Rate");
+    this.widthChart = initChart(widthChartName, "Vibrato Width");
     this.maxDataPoints = maxDataPoints;
 }
 
-Visualizer.prototype.setAudioProcessor = function(audioProcessor) {
-    this.audioProcessor = audioProcessor;
+var initChart = function(chartName, chartTitle) {
+    return new CanvasJS.Chart(chartName,
+    {
+        title:{
+            text: chartTitle
+        },
+        data: [
+            {
+            type: "spline",
+            dataPoints: []
+            }
+        ]
+    });
+}
+
+Visualizer.prototype.setMaxDataPoints = function(maxDataPoints) {
+    this.maxDataPoints = maxDataPoints;
 }
 
 Visualizer.prototype.updatePitchChart = function(pitches, times) {
-    this.updateChart(this.pitchChartName, 'Pitch', 'Pitch (Hz)', ['blue'], pitches, times);
+    this.updateChart(this.pitchChart, 'Pitch', 'Pitch (Hz)', ['blue'], pitches, times);
 }
 
 Visualizer.prototype.updateRateChart = function(rates, times) {
-    this.updateChart(this.rateChartName, 'Vibrato Rate', 'Rate (Hz)', ['green'], rates, times);
+    this.updateChart(this.rateChart, 'Vibrato Rate', 'Rate (Hz)', ['green'], rates, times);
 }
 
 Visualizer.prototype.updateWidthChart = function(widths, times) {
-    this.updateChart(this.widthChartName, 'Vibrato Width', 'Width (Hz)', ['red'], widths, times);
+    this.updateChart(this.widthChart, 'Vibrato Width', 'Width (Hz)', ['red'], widths, times);
 }
 
-Visualizer.prototype.updateChart = function(chartName, chartTitle, chartLabel, colors, rows, times) {
+Visualizer.prototype.updateChart = function(chart, chartTitle, chartLabel, colors, rows, times) {
 
 	if(rows.length > this.maxDataPoints) {
 		rows = rows.slice(rows.length - maxDataPoints, rows.length);
 		times = times.slice(times.length - maxDataPoints, times.length);
 	}
 
-	var data = new google.visualization.DataTable();
-	data.addColumn('number', 'X');
-	data.addColumn('number', '');
+    var min_y = Math.min(...rows);
+    var max_y = Math.max(...rows);
+    var buffer_y = (max_y - min_y) / 2;
 
-	var add = [];
-	for(var i = 0; i < maxDataPoints; i++) {
-//	    if (rows[i] > 0) {
-//		    add.push([times[i], rows[i]]);
-//	    }
-	    add.push([i, rows[i]]);
-	}
+    var dataPoints = [];
+    for (var i = 0; i < rows.length; i++) {
+        dataPoints.push({ x: i, y: rows[i] })
+    }
+    chart.options.axisY = {
+        minimum: min_y - buffer_y,
+        maximum: max_y + buffer_y
+    }
+    chart.options.data[0] = {
+        type: "spline",
+        dataPoints: dataPoints
+    }
 
-	data.addRows(add);
-
-	var options = {
-		title: chartTitle,
-		vAxis: {
-		  title: chartLabel
-		},
-		legend: 'none',
-        colors: colors,
-        //use this to smooth line
-		curveType: 'function',
-	}
-
-	var chart = new google.visualization.LineChart(document.getElementById(chartName));
-	chart.draw(data, options);
+    chart.render();
 }

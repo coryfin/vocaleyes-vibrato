@@ -16,6 +16,7 @@ let pitchChartName = 'pitch_chart_div';
 let rateChartName = 'rate_chart_div';
 let widthChartName = 'width_chart_div';
 let visualizer = new Visualizer(pitchChartName, rateChartName, widthChartName, maxDataPoints);
+const visualFrameRate = 10;
 
 var play = function() {
 
@@ -28,6 +29,8 @@ var play = function() {
 
 var stopPlaying = function() {
     stopped = true;
+//    visualize();
+    clearInterval(intervalFunc);
 }
 
 var record = function() {
@@ -60,30 +63,22 @@ var count = 0;
 var audioSetup = function(context, source) {
 
     audioProcessor = new AudioProcessor(context.sampleRate);
-    visualizer.setAudioProcessor(audioProcessor);
 
     frameSize = audioProcessor.getFrameSize();
     var frameRate = context.sampleRate / frameSize;
     maxDataPoints = Math.round(MAX_WINDOW_WIDTH * frameRate);
-    maxDataPoints = 20;
-//    console.log(maxDataPoints);
+    visualizer.setMaxDataPoints(maxDataPoints);
 
-    console.log("frame size: " + frameSize);
-    console.log("frame rate: " + frameRate);
     var processorNode = context.createScriptProcessor(frameSize, 1, 1);
     processorNode.onaudioprocess = function(e) {
-
         if (!stopped) {
-
             count++;
-            console.log("Processing frame " + count);
+//            console.log("Processing frame " + count);
 
-            // Get the audio buffer
+            // Get the audio buffer and process the frame
             var audioFrame = new Float32Array(frameSize);
             e.inputBuffer.copyFromChannel(audioFrame, 0);
-
-            // Process frame
-            audioProcessor.process(audioFrame, context.currentTime);
+            audioProcessor.process(audioFrame, e.playbackTime);
         }
     }
 
@@ -91,7 +86,7 @@ var audioSetup = function(context, source) {
     source.connect(processorNode);
     processorNode.connect(context.destination);
 
-    intervalFunc = setInterval(visualize, 15);
+    intervalFunc = setInterval(visualize, 1000 / visualFrameRate);
 }
 
 /**
@@ -100,11 +95,9 @@ var audioSetup = function(context, source) {
  */
 function visualize() {
 
-    console.log("visualize");
-
     visualizer.updatePitchChart(audioProcessor.getPitches(), audioProcessor.getTimestamps());
-    visualizer.updatePitchChart(audioProcessor.getVibratoRates(), audioProcessor.getTimestamps());
-    visualizer.updatePitchChart(audioProcessor.getVibratoWidths(), audioProcessor.getTimestamps());
+    visualizer.updateRateChart(audioProcessor.getVibratoRates(), audioProcessor.getTimestamps());
+    visualizer.updateWidthChart(audioProcessor.getVibratoWidths(), audioProcessor.getTimestamps());
 //    calcPitch();
 }
 
@@ -182,5 +175,5 @@ audioElem.onpause = stopPlaying;
 
 // Init
 stopped = true;
-google.charts.load('current', {packages: ['corechart']});
-google.charts.setOnLoadCallback(loadCharts);
+//google.charts.load('current', {packages: ['corechart']});
+//google.charts.setOnLoadCallback(loadCharts);

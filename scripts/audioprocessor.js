@@ -7,14 +7,14 @@
 let recentPitch;//global access in case setInterval isn't good enough to use
 
 const MIN_TONE_DURATION = 0.2;
-const PITCH_FRAME_DURATION = 0.02; // 2 cycles of 100 Hz tone
-const VIBRATO_FRAME_DURATION = 0.1; // 1 cycles of 2 Hz vibrato. See https://en.wikipedia.org/wiki/Vibrato#Typical_rate_and_extent_of_vibrato
+const PITCH_FRAME_DURATION = 0.03; // 2 cycles of 100 Hz tone
+const VIBRATO_FRAME_DURATION = 0.2; // 1 cycles of 2 Hz vibrato. See https://en.wikipedia.org/wiki/Vibrato#Typical_rate_and_extent_of_vibrato
 
 // Bounds on pitch, rate, and width estimates
 const MIN_PITCH = 75;
 const MAX_PITCH = 3000;
 const MIN_RATE = 0;
-const MAX_RATE = 10;
+const MAX_RATE = 12;
 const MIN_WIDTH = 0;
 const MAX_WIDTH = 1; // semitones
 
@@ -68,13 +68,10 @@ AudioProcessor.prototype.clear = function() {
     this.vibratoWidths = [];
 }
 
-//var count = 0;
 /*
  * Processes a new frame, storing all info in frames, pitches, vibratoRates, and vibratoWidths.
  */
 AudioProcessor.prototype.process = function(frame, timestamp) {
-//    count++;
-//    console.log("processing " + count);
     this.timestamps.push(timestamp);
     this.frames.push(frame);
     this.pitchProcess();
@@ -90,10 +87,10 @@ AudioProcessor.prototype.pitchProcess = function() {
         this.pitches.push(result.freq);
     }
     else {
-        this.pitches.push(0);
+        this.pitches.push(-1);
     }
 
-    this.smoothPitchContour();
+//    this.smoothPitchContour();
 }
 
 /*
@@ -105,29 +102,44 @@ AudioProcessor.prototype.smoothPitchContour = function() {
     var end = this.pitches.length - 1;
     var start = end - toneFrameSize;
 
-    // If the bookends of the tone frame are within a quarter tone, average out the intermediate pitch values
-    var semitoneDiff = Math.abs(freq2Semitones(this.pitches[start]) - freq2Semitones(this.pitches[end]))
-    if (semitoneDiff < 0.5) {
-        var avePitch = (this.pitches[start] + this.pitches[end]) / 2;
-        for (var i = start + 1; i < end; i++) {
+    if (start >= 0) {
+        console.log("Smooth from " + start + " to " + end);
+        // If the bookends of the tone frame are within a quarter tone, average out the intermediate pitch values
+        var semitoneDiff = Math.abs(freq2Semitones(this.pitches[start]) - freq2Semitones(this.pitches[end]))
+        if (semitoneDiff < 0.5) {
+            var avePitch = (this.pitches[start] + this.pitches[end]) / 2;
+            for (var i = start + 1; i < end; i++) {
 
-            semitoneDiff = Math.abs(freq2Semitones(avePitch) - freq2Semitones(this.pitches[i]))
-            if (semitoneDiff > 1) {
-                if (this.pitches[i] > avePitch) {
-                    var n = Math.round(this.pitches[i] / avePitch);
-                    this.pitches[i] /= n;
-                }
-                else if (this.pitches[i] < avePitch) {
-                    var n = Math.round(avePitch / this.pitches[i]);
-                    this.pitches[i] *= n;
+                semitoneDiff = Math.abs(freq2Semitones(avePitch) - freq2Semitones(this.pitches[i]))
+                if (semitoneDiff > 1) {
+                    console.log("outlier, pitch = " + avePitch);
+
+                    if (this.pitches[i] == -1) {
+                        // Average of neighbors
+                        this.pitches[i] = (this.pitches[i - 1] + this.pitches[i + 1]) / 2;
+                    }
+                    else if (this.pitches[i] > avePitch) {
+                        var n = Math.round(this.pitches[i] / avePitch);
+                        this.pitches[i] /= n;
+                    }
+                    else if (this.pitches[i] < avePitch) {
+                        var n = Math.round(avePitch / this.pitches[i]);
+                        this.pitches[i] *= n;
+                    }
                 }
             }
-        }
 
-        for (var i = start + 1; i < end; i++) {
-            // If its still not within a semitone, make it the average of its neighbors
-            if (semitoneDiff > 1) {
-                this.pitches[i] = (this.pitches[i - 1] + this.pitches[i + 1]) / 2;
+            for (var i = start + 1; i < end; i++) {
+                // If its still not within a semitone, make it the average of its neighbors
+                if (semitoneDiff > 1) {
+                    this.pitches[i] = (this.pitches[i - 1] + this.pitches[i + 1]) / 2;
+                }
+            }
+            for (var i = start + 1; i < end; i++) {
+                // If still not within a semitone, make it the average of the bookends
+                if (semitoneDiff > 1) {
+                    this.pitches[i] = avePitch;
+                }
             }
         }
     }
@@ -148,7 +160,7 @@ AudioProcessor.prototype.vibratoProcess = function() {
 
         var width = Math.max(...pitchFrame) - Math.min(...pitchFrame);
         var semitoneWidth = freq2Semitones(Math.max(...pitchFrame)) - freq2Semitones(Math.min(...pitchFrame));
-        if (MIN_WIDTH <= semitoneWidth  && semitoneWidth <= MAX_WIDTH) {
+        if (MIN_WIDTH <= semitoneWidth && semitoneWidth <= MAX_WIDTH) {
             this.vibratoWidths.push(Math.max(...pitchFrame) - Math.min(...pitchFrame));
         }
         else {
@@ -157,6 +169,16 @@ AudioProcessor.prototype.vibratoProcess = function() {
 
         // Normalize pitches (zero out the DC offset)
         var normalizedPitchFrame = normalize(pitchFrame);
+
+        // TODO: Fix weird bottoming out
+//        // Detect whether vibrato is present (width is at least a quarter of a semitone)
+//        if (semitoneWidth >= 1 / 4) {
+//            console.log("Here");
+//            // Find all instances of three nearly equal pitch samples and eliminate the middle one
+//            for (var i = 0; i < this.pitches.length; i++) {
+//
+//            }
+//        }
 
         // Peak-picking algorithm
         var peakIndices = [];
