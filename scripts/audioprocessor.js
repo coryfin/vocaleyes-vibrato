@@ -7,8 +7,8 @@
 let recentPitch;//global access in case setInterval isn't good enough to use
 
 const MIN_TONE_DURATION = 0.2;
-const PITCH_FRAME_DURATION = 0.03; // 2 cycles of 100 Hz tone
-const VIBRATO_FRAME_DURATION = 0.2; // 1 cycles of 2 Hz vibrato. See https://en.wikipedia.org/wiki/Vibrato#Typical_rate_and_extent_of_vibrato
+const PITCH_FRAME_DURATION = 0.03; // 3 cycles of 100 Hz tone
+const VIBRATO_FRAME_DURATION = 0.5; // 2.5 cycles of 5 Hz vibrato. See https://en.wikipedia.org/wiki/Vibrato#Typical_rate_and_extent_of_vibrato
 
 // Bounds on pitch, rate, and width estimates
 const MIN_PITCH = 75;
@@ -103,10 +103,9 @@ AudioProcessor.prototype.smoothPitchContour = function() {
     var start = end - toneFrameSize;
 
     if (start >= 0) {
-        console.log("Smooth from " + start + " to " + end);
         // If the bookends of the tone frame are within a quarter tone, average out the intermediate pitch values
         var semitoneDiff = Math.abs(freq2Semitones(this.pitches[start]) - freq2Semitones(this.pitches[end]))
-        if (semitoneDiff < 0.5) {
+        if (semitoneDiff < 1) {
             var avePitch = (this.pitches[start] + this.pitches[end]) / 2;
             for (var i = start + 1; i < end; i++) {
 

@@ -1,13 +1,13 @@
 let recordButton = document.getElementById('record');
 let audioElem = document.getElementById('audio');
-
-const MAX_WINDOW_WIDTH = 2; // seconds
 const VISUAL_FRAME_RATE = 10; // frames per second
 
+let windowDuration = 2;
 let stopped;
 let recorder;
 let audioProcessor;
 let frameSize;
+let frameRate;
 let maxDataPoints;
 
 let intervalFunc;
@@ -29,7 +29,6 @@ var play = function() {
 
 var stopPlaying = function() {
     stopped = true;
-//    visualize();
     clearInterval(intervalFunc);
 }
 
@@ -59,22 +58,18 @@ var stopRecording = function() {
     recordButton.innerHTML = 'Record';
 }
 
-var count = 0;
 var audioSetup = function(context, source) {
 
     audioProcessor = new AudioProcessor(context.sampleRate);
 
     frameSize = audioProcessor.getFrameSize();
-    var frameRate = context.sampleRate / frameSize;
-    maxDataPoints = Math.round(MAX_WINDOW_WIDTH * frameRate);
+    frameRate = context.sampleRate / frameSize;
+    maxDataPoints = Math.round(windowDuration * frameRate);
     visualizer.setMaxDataPoints(maxDataPoints);
 
     var processorNode = context.createScriptProcessor(frameSize, 1, 1);
     processorNode.onaudioprocess = function(e) {
         if (!stopped) {
-            count++;
-//            console.log("Processing frame " + count);
-
             // Get the audio buffer and process the frame
             var audioFrame = new Float32Array(frameSize);
             e.inputBuffer.copyFromChannel(audioFrame, 0);
@@ -176,3 +171,80 @@ audioElem.onpause = stopPlaying;
 // Init
 stopped = true;
 loadCharts();
+
+//plugin bootstrap minus and plus
+//http://jsfiddle.net/laelitenetwork/puJ6G/
+$('.btn-number').click(function(e){
+    e.preventDefault();
+
+    fieldName = $(this).attr('data-field');
+    type      = $(this).attr('data-type');
+    var input = $("input[name='"+fieldName+"']");
+    var currentVal = parseInt(input.val());
+    if (!isNaN(currentVal)) {
+        if(type == 'minus') {
+
+            if(currentVal > input.attr('min')) {
+                input.val(currentVal - 1).change();
+            }
+            if(parseInt(input.val()) == input.attr('min')) {
+                $(this).attr('disabled', true);
+            }
+
+        } else if(type == 'plus') {
+
+            if(currentVal < input.attr('max')) {
+                input.val(currentVal + 1).change();
+            }
+            if(parseInt(input.val()) == input.attr('max')) {
+                $(this).attr('disabled', true);
+            }
+
+        }
+    } else {
+        input.val(0);
+    }
+});
+$('.input-number').focusin(function(){
+   $(this).data('oldValue', $(this).val());
+});
+$('.input-number').change(function() {
+
+    minValue =  parseInt($(this).attr('min'));
+    maxValue =  parseInt($(this).attr('max'));
+    valueCurrent = parseInt($(this).val());
+    windowDuration = valueCurrent;
+    maxDataPoints = Math.round(windowDuration * frameRate);
+    visualizer.setMaxDataPoints(maxDataPoints);
+
+    name = $(this).attr('name');
+    if(valueCurrent >= minValue) {
+        $(".btn-number[data-type='minus'][data-field='"+name+"']").removeAttr('disabled')
+    } else {
+        alert('Sorry, the minimum value was reached');
+        $(this).val($(this).data('oldValue'));
+    }
+    if(valueCurrent <= maxValue) {
+        $(".btn-number[data-type='plus'][data-field='"+name+"']").removeAttr('disabled')
+    } else {
+        alert('Sorry, the maximum value was reached');
+        $(this).val($(this).data('oldValue'));
+    }
+
+
+});
+$(".input-number").keydown(function (e) {
+    // Allow: backspace, delete, tab, escape, enter and .
+    if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 190]) !== -1 ||
+         // Allow: Ctrl+A
+        (e.keyCode == 65 && e.ctrlKey === true) ||
+         // Allow: home, end, left, right
+        (e.keyCode >= 35 && e.keyCode <= 39)) {
+             // let it happen, don't do anything
+             return;
+    }
+    // Ensure that it is a number and stop the keypress
+    if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+        e.preventDefault();
+    }
+});
