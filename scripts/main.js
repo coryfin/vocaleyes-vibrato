@@ -29,7 +29,6 @@ var play = function() {
 
 var stopPlaying = function() {
     stopped = true;
-//    visualize();
     clearInterval(intervalFunc);
 }
 
@@ -59,7 +58,6 @@ var stopRecording = function() {
     recordButton.innerHTML = 'Record';
 }
 
-var count = 0;
 var audioSetup = function(context, source) {
 
     audioProcessor = new AudioProcessor(context.sampleRate);
@@ -72,9 +70,6 @@ var audioSetup = function(context, source) {
     var processorNode = context.createScriptProcessor(frameSize, 1, 1);
     processorNode.onaudioprocess = function(e) {
         if (!stopped) {
-            count++;
-//            console.log("Processing frame " + count);
-
             // Get the audio buffer and process the frame
             var audioFrame = new Float32Array(frameSize);
             e.inputBuffer.copyFromChannel(audioFrame, 0);

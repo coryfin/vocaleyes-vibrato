@@ -90,7 +90,7 @@ AudioProcessor.prototype.pitchProcess = function() {
         this.pitches.push(-1);
     }
 
-    this.smoothPitchContour();
+//    this.smoothPitchContour();
 }
 
 /*
