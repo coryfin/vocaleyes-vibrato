@@ -7,6 +7,7 @@ app = Flask(__name__)
 # This is the path to the upload directory
 app.config['SCRIPTS_FOLDER'] = 'scripts'
 app.config['CSS_FOLDER'] = 'css'
+app.config['FONTS_FOLDER'] = 'fonts'
 app.config['DATA_FOLDER'] = 'data'
 
 
@@ -29,6 +30,11 @@ def script_file(filename):
 @app.route('/css/<filename>', methods=['GET'])
 def css_file(filename):
     return send_from_directory(app.config['CSS_FOLDER'], filename)
+
+
+@app.route('/fonts/<filename>', methods=['GET'])
+def font_file(filename):
+    return send_from_directory(app.config['FONTS_FOLDER'], filename)
 
 
 @app.route('/data/<filename>', methods=['GET'])
