@@ -90,7 +90,7 @@ AudioProcessor.prototype.pitchProcess = function() {
         this.pitches.push(-1);
     }
 
-//    this.smoothPitchContour();
+    this.smoothPitchContour();
 }
 
 /*
@@ -103,10 +103,9 @@ AudioProcessor.prototype.smoothPitchContour = function() {
     var start = end - toneFrameSize;
 
     if (start >= 0) {
-        console.log("Smooth from " + start + " to " + end);
         // If the bookends of the tone frame are within a quarter tone, average out the intermediate pitch values
         var semitoneDiff = Math.abs(freq2Semitones(this.pitches[start]) - freq2Semitones(this.pitches[end]))
-        if (semitoneDiff < 0.5) {
+        if (semitoneDiff < 1) {
             var avePitch = (this.pitches[start] + this.pitches[end]) / 2;
             for (var i = start + 1; i < end; i++) {
 

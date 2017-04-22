@@ -29,31 +29,32 @@ Visualizer.prototype.setMaxDataPoints = function(maxDataPoints) {
 }
 
 Visualizer.prototype.updatePitchChart = function(pitches, times) {
-
-    var min_y = Math.min(...pitches);
-    var max_y = Math.max(...pitches);
-    var buffer_y = (max_y - min_y) / 2;
-
-    this.pitchChart.options.axisY.minimum = min_y - buffer_y;
-    this.pitchChart.options.axisY.maximum = max_y + buffer_y;
-
-    this.updateChart(this.pitchChart, 'Pitch', pitches, times);
+    this.updateChart(this.pitchChart, 'Pitch', pitches, times, true);
 }
 
 Visualizer.prototype.updateRateChart = function(rates, times) {
-    this.updateChart(this.rateChart, 'Vibrato Rate', rates, times);
+    this.updateChart(this.rateChart, 'Vibrato Rate', rates, times, false);
 }
 
 Visualizer.prototype.updateWidthChart = function(widths, times) {
-    this.updateChart(this.widthChart, 'Vibrato Width', widths, times);
+    this.updateChart(this.widthChart, 'Vibrato Width', widths, times, false);
 }
 
-Visualizer.prototype.updateChart = function(chart, chartTitle, rows, times) {
+Visualizer.prototype.updateChart = function(chart, chartTitle, rows, times, adjustAxes) {
 
 	if(rows.length > this.maxDataPoints) {
 		rows = rows.slice(rows.length - maxDataPoints, rows.length);
 		times = times.slice(times.length - maxDataPoints, times.length);
 	}
+
+    if (adjustAxes) {
+        var min_y = Math.min(...rows);
+        var max_y = Math.max(...rows);
+        var buffer_y = (max_y - min_y) / 2;
+
+        this.pitchChart.options.axisY.minimum = min_y - buffer_y;
+        this.pitchChart.options.axisY.maximum = max_y + buffer_y;
+    }
 
     var dataPoints = [];
     for (var i = 0; i < rows.length; i++) {
