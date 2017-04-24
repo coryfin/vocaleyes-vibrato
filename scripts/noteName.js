@@ -22,65 +22,76 @@ let A0 = 27.5;//below human hearing threshold
 
 
 function pitchName(freq){
+	console.log("beginning of pitchName");
+
+
 	var lower_bound;
 	var upper_bound;
 	var offsetName;
 
 	
-	var i = Math.floor(12 * Math.log2(freq/A0));
+	var i = Math.floor(12 * (Math.log(freq/A0)/Math.log(2)));
 	lower_bound = A0 * Math.pow(half_step,i);	
 	upper_bound = A0 * Math.pow(half_step,i + 1);
 	
 	offset = findCents(lower_bound,upper_bound,freq);
 	var offsetName = " ".concat(offset.toString()).concat("c");
 
+	console.log(offsetName);
+	console.log(freq);
+
 	if(offset < 0){
 		i++;//the frequency is closer to the note above in this case
 	}
 
 	//find register name as a string
-	var register = (i/12).toString();
+	var register = Math.floor(i/12);
+	console.log(register);
+	
 	var note = i % 12;//determine which note is played, regardless of register
 	var name = "";
 	switch(note){//constructs the name as a string
 		case 0:
-			name.concat(A).concat(register);
+			name = name.concat(A).concat(register);
 			break;
 		case 1:
-			name.concat(As).concat(register);
+			name = name.concat(As).concat(register);
 			break;
 		case 2:
-			name.concat(B).concat(register);
+			name = name.concat(B).concat(register);
 			break;
 		case 3:
-			name.concat(C).concat(register);
+			name = name.concat(C).concat(register);
 			break;
 		case 4:
-			name.concat(Cs).concat(register);
+			name = name.concat(Cs).concat(register);
 			break;
 		case 5:
-			name.concat(D).concat(register);
+			name = name.concat(D).concat(register);
 			break;
 		case 6:
-			name.concat(Ds).concat(register);
+			name = name.concat(Ds).concat(register);
 			break;
 		case 7:
-			name.concat(E).concat(register);
+			name = name.concat(E).concat(register);
 			break;
 		case 8:
-			name.concat(F).concat(register);
+			name = name.concat(F).concat(register);
 			break;
 		case 9:
-			name.concat(Fs).concat(register);
+			name = name.concat(Fs).concat(register);
 			break;
 		case 10:
-			name.concat(G).concat(register);
+			name = name.concat(G).concat(register);
 			break;
 		case 11:
-			name.concat(Gs).concat(register);
+			name = name.concat(Gs).concat(register);
 			break;
 	}
-	name.concat(offsetName);//adds offset in form of cents to the name	
+	console.log(name);
+	name = name.concat(offsetName);//adds offset in form of cents to the name	
+	console.log(name);
+	
 	return name;//example, "C#/Db4 -13c"
 }
 
@@ -93,11 +104,10 @@ function findCents(lower_bound,upper_bound,realValue){
 		if(realValue < lower_bound * Math.pow(cents,i)){
 			break;//keep value the same to indicate closest note is below the given pitch
 		}
-		if(realFalue > upper_bound / Math.pow(cents,i)){
+		if(realValue > upper_bound / Math.pow(cents,i)){
 			i = -i;//flip value to indicate the closest note is above the given pitch
 			break;
 		}		
 	}
-	
 	return i;	
 }

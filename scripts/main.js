@@ -1,16 +1,22 @@
 let recordButton = document.getElementById('record');
-let statusLabel = document.getElementById('status');
-let resultsElem = document.getElementById('results');
 let audioElem = document.getElementById('audio');
-let visualizationElem = document.getElementById('visualization');
+const VISUAL_FRAME_RATE = 10; // frames per second
 
+let windowDuration = 2;
 let stopped;
 let recorder;
 let audioProcessor;
 let frameSize;
+let frameRate;
+let maxDataPoints;
 
 let intervalFunc;
 let previousPitch;
+
+let pitchChartName = 'pitch_chart_div';
+let rateChartName = 'rate_chart_div';
+let widthChartName = 'width_chart_div';
+let visualizer = new Visualizer(pitchChartName, rateChartName, widthChartName, maxDataPoints);
 
 var play = function() {
 
@@ -23,6 +29,7 @@ var play = function() {
 
 var stopPlaying = function() {
     stopped = true;
+    clearInterval(intervalFunc);
 }
 
 var record = function() {
@@ -31,7 +38,6 @@ var record = function() {
         // Begin recording, update state
         stopped = false;
         recordButton.innerHTML = 'Stop';
-//        resultsElem.style.display = 'none';
 
         var context = new AudioContext();
         var sourceNode = context.createMediaStreamSource(stream);
@@ -57,22 +63,17 @@ var audioSetup = function(context, source) {
     audioProcessor = new AudioProcessor(context.sampleRate);
 
     frameSize = audioProcessor.getFrameSize();
+    frameRate = context.sampleRate / frameSize;
+    maxDataPoints = Math.round(windowDuration * frameRate);
+    visualizer.setMaxDataPoints(maxDataPoints);
 
     var processorNode = context.createScriptProcessor(frameSize, 1, 1);
     processorNode.onaudioprocess = function(e) {
-
         if (!stopped) {
-            // Get the audio buffer
+            // Get the audio buffer and process the frame
             var audioFrame = new Float32Array(frameSize);
             e.inputBuffer.copyFromChannel(audioFrame, 0);
-
-            // Process frame
-            audioProcessor.process(audioFrame, context.currentTime);
-
-            // TODO: draw chart for every frame or using setInterval?
-            visualizePitch(audioProcessor.getPitches());
-				    visualizeRate(audioProcessor.getVibratoRates());
-				    visualizeWidth(audioProcessor.getVibratoWidths());
+            audioProcessor.process(audioFrame, e.playbackTime);
         }
     }
 
@@ -80,128 +81,25 @@ var audioSetup = function(context, source) {
     source.connect(processorNode);
     processorNode.connect(context.destination);
 
-    intervalFunc = setInterval(calcPitch,50);
+    intervalFunc = setInterval(visualize, 1000 / VISUAL_FRAME_RATE);
 }
 
+/**
+ * Draws data from AudioProcessor on the charts.
+ * The Google charts is a bottleneck, so it needs a slower frame rate that the AudioProcessor.
+ */
+function visualize() {
 
-var pitchChartName = 'pitch_chart_div';
-var rateChartName = 'rate_chart_div';
-var widthChartName = 'width_chart_div';
-var maxDataPoints = 70;
-function visualizePitch(pitches) {
-	if(pitches.length <= maxDataPoints) {
-		updatePitchChart(pitches, audioProcessor.getTimestamps());
-	}
-	else {
-		var boundedPitch = pitches.slice(pitches.length - maxDataPoints, pitches.length);
-		updatePitchChart(boundedPitch, audioProcessor.getTimestamps());
-	}
+    visualizer.updatePitchChart(audioProcessor.getPitches(), audioProcessor.getTimestamps());
+    visualizer.updateRateChart(audioProcessor.getVibratoRates(), audioProcessor.getTimestamps());
+    visualizer.updateWidthChart(audioProcessor.getVibratoWidths(), audioProcessor.getTimestamps());
+    calcPitch();
 }
 
-function updatePitchChart(rows, times) {
-	var data = new google.visualization.DataTable();
-	data.addColumn('number', 'X');
-	data.addColumn('number', '');
-	
-	var add = [];
-	for(var i = 0; i < maxDataPoints; i++) {
-		add.push([i, rows[i]]);
-	}
-	
-	data.addRows(add);
-
-	var options = {
-		title: 'Pitch',
-		hAxis: {
-		  title: 'Time'
-		},
-		vAxis: {
-		  title: 'Pitch (Hz)'
-		},
-		//use this to smooth line
-		//curveType: 'function'
-	}
-
-	var chart = new google.visualization.LineChart(document.getElementById(pitchChartName));
-	chart.draw(data, options);
-}
-
-function visualizeRate(rates) {
-	if(rates.length <= maxDataPoints) {
-		updateRateChart(rates, audioProcessor.getTimestamps());
-	}
-	else {
-		var boundedPitch = rates.slice(rates.length - maxDataPoints, rates.length);
-		updateRateChart(boundedPitch, audioProcessor.getTimestamps());
-	}
-}
-
-function updateRateChart(rows, times) {
-	var data = new google.visualization.DataTable();
-	data.addColumn('number', 'X');
-	data.addColumn('number', '');
-	
-	var add = [];
-	for(var i = 0; i < maxDataPoints; i++) {
-		add.push([i, rows[i]]);
-	}
-	
-	data.addRows(add);
-
-	var options = {
-		title: 'Vibrato Rate',
-		hAxis: {
-		  title: 'Time'
-		},
-		vAxis: {
-		  title: 'Rate'
-		},
-		colors: ['green'],
-		//use this to smooth line
-		curveType: 'function'
-	}
-
-	var chart = new google.visualization.LineChart(document.getElementById(rateChartName));
-	chart.draw(data, options);
-}
-
-function visualizeWidth(widths) {
-	if(widths.length <= maxDataPoints) {
-		updateWidthChart(widths, audioProcessor.getTimestamps());
-	}
-	else {
-		var boundedPitch = widths.slice(widths.length - maxDataPoints, widths.length);
-		updateWidthChart(boundedPitch, audioProcessor.getTimestamps());
-	}
-}
-
-function updateWidthChart(rows, times) {
-	var data = new google.visualization.DataTable();
-	data.addColumn('number', 'X');
-	data.addColumn('number', '');
-	
-	var add = [];
-	for(var i = 0; i < maxDataPoints; i++) {
-		add.push([i, rows[i]]);
-	}
-	
-	data.addRows(add);
-
-	var options = {
-		title: 'Vibrato Width',
-		hAxis: {
-		  title: 'Time'
-		},
-		vAxis: {
-		  title: 'Width'
-		},
-		colors: ['red'],
-		//use this to smooth line
-		curveType: 'function'
-	}
-
-	var chart = new google.visualization.LineChart(document.getElementById(widthChartName));
-	chart.draw(data, options);
+function loadCharts() {
+    visualizer.updatePitchChart([],[]);
+    visualizer.updateRateChart([],[]);
+    visualizer.updateWidthChart([],[]);
 }
 
 function updateData(result) {
@@ -228,25 +126,36 @@ function updateData(result) {
 
 function calcPitch(){
 	//get most recent pitch
-	var currentPitch = audioProcessor.currentPitch();
+	var current = audioProcessor.getPitches();
+	var new_current = current[current.length - 1];
+	console.log(new_current);
+	previousPitch = new_current;
+
+	if(new_current == -1){
+		console.log("got an invalid pitch, about to return");
+		return;//do nothing here
+	}
 
 	//base case
 	if(previousPitch === null){
-		previousPitch = currentPitch.freq;
-		drawCurrentPitch(currentPitch.freq);
+		drawCurrentPitch(new_current);
 		return;
 	}
 
-	if(currentPitch > 1.9 * previousPitch){//catches if fundamental frequency was dropped
+	if(new_current > 1.9 * previousPitch){//catches if fundamental frequency was dropped
 		drawCurrentPitch(previousPitch);
-		previousPitch = currentPitch.freq;
+		return;
 	}
 
 
-	if(currentPitch < 0.55 * previousPitch){//catches if fundemental was dropped in the previous function call
+	if(new_current < 0.55 * previousPitch){//catches if fundemental was dropped in the previous function call
 		drawCurrentPitch(previousPitch);
-		previousPitch = currentPitch.freq;
+		return;
 	}
+
+	console.log("about to call drawCurrentPitch()");
+	drawCurrentPitch(new_current);
+	return;
 
 }
 
@@ -257,7 +166,9 @@ It takes in a frequency as a 32 bit float
 and should draw this onto the screen somehow
 */
 function drawCurrentPitch(pitch){
-	pitch_name_div.innerHTML = pitchName(pitch);
+	var newPitch = pitchName(pitch);
+	console.log(newPitch);
+	document.getElementById('pitch_name_element').innerHTML = pitchName(pitch);
 }
 
 // Hook up events
@@ -272,9 +183,81 @@ audioElem.onpause = stopPlaying;
 
 // Init
 stopped = true;
-recordButton.style.display = '';
-statusLabel.style.display = 'none';
-//resultsElem.style.display = 'none';
+loadCharts();
+
+//plugin bootstrap minus and plus
+//http://jsfiddle.net/laelitenetwork/puJ6G/
+$('.btn-number').click(function(e){
+    e.preventDefault();
+
+    fieldName = $(this).attr('data-field');
+    type      = $(this).attr('data-type');
+    var input = $("input[name='"+fieldName+"']");
+    var currentVal = parseInt(input.val());
+    if (!isNaN(currentVal)) {
+        if(type == 'minus') {
+
+            if(currentVal > input.attr('min')) {
+                input.val(currentVal - 1).change();
+            }
+            if(parseInt(input.val()) == input.attr('min')) {
+                $(this).attr('disabled', true);
+            }
+
+        } else if(type == 'plus') {
+
+            if(currentVal < input.attr('max')) {
+                input.val(currentVal + 1).change();
+            }
+            if(parseInt(input.val()) == input.attr('max')) {
+                $(this).attr('disabled', true);
+            }
+
+        }
+    } else {
+        input.val(0);
+    }
+});
+$('.input-number').focusin(function(){
+   $(this).data('oldValue', $(this).val());
+});
+$('.input-number').change(function() {
+
+    minValue =  parseInt($(this).attr('min'));
+    maxValue =  parseInt($(this).attr('max'));
+    valueCurrent = parseInt($(this).val());
+    windowDuration = valueCurrent;
+    maxDataPoints = Math.round(windowDuration * frameRate);
+    visualizer.setMaxDataPoints(maxDataPoints);
+
+    name = $(this).attr('name');
+    if(valueCurrent >= minValue) {
+        $(".btn-number[data-type='minus'][data-field='"+name+"']").removeAttr('disabled')
+    } else {
+        alert('Sorry, the minimum value was reached');
+        $(this).val($(this).data('oldValue'));
+    }
+    if(valueCurrent <= maxValue) {
+        $(".btn-number[data-type='plus'][data-field='"+name+"']").removeAttr('disabled')
+    } else {
+        alert('Sorry, the maximum value was reached');
+        $(this).val($(this).data('oldValue'));
+    }
 
 
-
+});
+$(".input-number").keydown(function (e) {
+    // Allow: backspace, delete, tab, escape, enter and .
+    if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 190]) !== -1 ||
+         // Allow: Ctrl+A
+        (e.keyCode == 65 && e.ctrlKey === true) ||
+         // Allow: home, end, left, right
+        (e.keyCode >= 35 && e.keyCode <= 39)) {
+             // let it happen, don't do anything
+             return;
+    }
+    // Ensure that it is a number and stop the keypress
+    if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+        e.preventDefault();
+    }
+});

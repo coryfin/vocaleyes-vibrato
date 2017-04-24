@@ -16,6 +16,13 @@ var freq2Semitones = function(freq) {
 }
 
 /*
+ * Converts number of semitones from A-440 to frequency in Hz
+ */
+var semitones2Freq = function(semitones) {
+    return 440 * Math.pow(2, semitones / 12);
+}
+
+/*
  * log base 2
  */
 var log2 = function(x) {
