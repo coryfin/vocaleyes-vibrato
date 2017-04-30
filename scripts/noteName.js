@@ -19,6 +19,7 @@ let Gs = "G#/Ab";
 let half_step = Math.pow(2.0,1.0/12.0);
 let cents = Math.pow(2.0,1.0/1200.0);
 let A0 = 27.5;//below human hearing threshold
+let offset;
 
 
 function pitchName(freq){
@@ -37,8 +38,6 @@ function pitchName(freq){
 	offset = findCents(lower_bound,upper_bound,freq);
 	var offsetName = " ".concat(offset.toString()).concat("c");
 
-	console.log(offsetName);
-	console.log(freq);
 
 	if(offset < 0){
 		i++;//the frequency is closer to the note above in this case
@@ -46,7 +45,6 @@ function pitchName(freq){
 
 	//find register name as a string
 	var register = Math.floor(i/12);
-	console.log(register);
 	
 	var note = i % 12;//determine which note is played, regardless of register
 	var name = "";
@@ -88,10 +86,9 @@ function pitchName(freq){
 			name = name.concat(Gs).concat(register);
 			break;
 	}
-	console.log(name);
-	name = name.concat(offsetName);//adds offset in form of cents to the name	
-	console.log(name);
-	
+	//name = name.concat(offsetName);//adds offset in form of cents to the name	
+	offset = offsetName;
+
 	return name;//example, "C#/Db4 -13c"
 }
 

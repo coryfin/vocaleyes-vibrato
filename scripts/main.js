@@ -12,6 +12,8 @@ let maxDataPoints;
 
 let intervalFunc;
 let previousPitch;
+let date  = new Date();
+let previousTime = 0;
 
 let pitchChartName = 'pitch_chart_div';
 let rateChartName = 'rate_chart_div';
@@ -126,6 +128,11 @@ function updateData(result) {
 
 function calcPitch(){
 	//get most recent pitch
+	if(date.getMilliseconds() - previousTime < 250){//only update every 3 seconds
+		return;	
+	}
+	
+	
 	var current = audioProcessor.getPitches();
 	var new_current = current[current.length - 1];
 	console.log(new_current);
@@ -155,6 +162,8 @@ function calcPitch(){
 
 	console.log("about to call drawCurrentPitch()");
 	drawCurrentPitch(new_current);
+	
+	previousTime = d.getMilliseconds();
 	return;
 
 }
@@ -167,8 +176,8 @@ and should draw this onto the screen somehow
 */
 function drawCurrentPitch(pitch){
 	var newPitch = pitchName(pitch);
-	console.log(newPitch);
 	document.getElementById('pitch_name_element').innerHTML = pitchName(pitch);
+	document.getElementById('offset_element').innerHTML = offset;
 }
 
 // Hook up events
