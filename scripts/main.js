@@ -9,6 +9,7 @@ let audioProcessor;
 let frameSize;
 let frameRate;
 let maxDataPoints;
+let pitchCenter = 840;
 
 let intervalFunc;
 let previousPitch;
@@ -163,7 +164,7 @@ function calcPitch(){
 	console.log("about to call drawCurrentPitch()");
 	drawCurrentPitch(new_current);
 	
-	previousTime = d.getMilliseconds();
+	previousTime = date.getMilliseconds();
 	return;
 
 }
@@ -178,6 +179,7 @@ function drawCurrentPitch(pitch){
 	var newPitch = pitchName(pitch);
 	document.getElementById('pitch_name_element').innerHTML = pitchName(pitch);
 	document.getElementById('offset_element').innerHTML = offset;
+	document.getElementById('pitch_freq_element').innerHTML = Math.round(pitch) + ' Hz';
 }
 
 // Hook up events
@@ -235,9 +237,17 @@ $('.input-number').change(function() {
     minValue =  parseInt($(this).attr('min'));
     maxValue =  parseInt($(this).attr('max'));
     valueCurrent = parseInt($(this).val());
-    windowDuration = valueCurrent;
-    maxDataPoints = Math.round(windowDuration * frameRate);
-    visualizer.setMaxDataPoints(maxDataPoints);
+
+    var inputName = $(this).attr('name');
+    if (inputName === 'quant[1]') {
+        windowDuration = valueCurrent;
+        maxDataPoints = Math.round(windowDuration * frameRate);
+        visualizer.setMaxDataPoints(maxDataPoints);
+    }
+    else if (inputName == 'quant[2]') {
+        pitchCenter = valueCurrent;
+        visualizer.setPitchCenter(pitchCenter);
+    }
 
     name = $(this).attr('name');
     if(valueCurrent >= minValue) {
