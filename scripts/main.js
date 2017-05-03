@@ -205,11 +205,17 @@ $('.btn-number').click(function(e){
     type      = $(this).attr('data-type');
     var input = $("input[name='"+fieldName+"']");
     var currentVal = parseInt(input.val());
+
+    var increment = 1;
+    if (fieldName === 'quant[2]') {
+        increment = 10;
+    }
+
     if (!isNaN(currentVal)) {
         if(type == 'minus') {
 
             if(currentVal > input.attr('min')) {
-                input.val(currentVal - 1).change();
+                input.val(currentVal - increment).change();
             }
             if(parseInt(input.val()) == input.attr('min')) {
                 $(this).attr('disabled', true);
@@ -218,7 +224,7 @@ $('.btn-number').click(function(e){
         } else if(type == 'plus') {
 
             if(currentVal < input.attr('max')) {
-                input.val(currentVal + 1).change();
+                input.val(currentVal + increment).change();
             }
             if(parseInt(input.val()) == input.attr('max')) {
                 $(this).attr('disabled', true);
