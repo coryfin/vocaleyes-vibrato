@@ -3,6 +3,7 @@ function Visualizer(pitchChartName, rateChartName, widthChartName, maxDataPoints
     this.rateChart = initChart(rateChartName, "Vibrato Rate", MIN_RATE, MAX_RATE);
     this.widthChart = initChart(widthChartName, "Vibrato Width", MIN_WIDTH, MAX_WIDTH);
     this.maxDataPoints = maxDataPoints;
+    this.pitchCenter = 840;
 }
 
 var initChart = function(chartName, chartTitle, yMin, yMax) {
@@ -28,6 +29,10 @@ Visualizer.prototype.setMaxDataPoints = function(maxDataPoints) {
     this.maxDataPoints = maxDataPoints;
 }
 
+Visualizer.prototype.setPitchCenter = function(pitchCenter) {
+    this.pitchCenter = pitchCenter;
+}
+
 Visualizer.prototype.updatePitchChart = function(pitches, times) {
     this.updateChart(this.pitchChart, 'Pitch', pitches, times, true);
 }
@@ -48,12 +53,17 @@ Visualizer.prototype.updateChart = function(chart, chartTitle, rows, times, adju
 	}
 
     if (adjustAxes) {
-        var min_y = Math.min(...rows);
-        var max_y = Math.max(...rows);
-        var buffer_y = (max_y - min_y) / 2;
+//        var min_y = Math.min(...rows);
+//        var max_y = Math.max(...rows);
+//        var buffer_y = (max_y - min_y) / 2;
+//        this.pitchChart.options.axisY.minimum = min_y - buffer_y;
+//        this.pitchChart.options.axisY.maximum = max_y + buffer_y;
 
-        this.pitchChart.options.axisY.minimum = min_y - buffer_y;
-        this.pitchChart.options.axisY.maximum = max_y + buffer_y;
+        var noteCenter = freq2Semitones(this.pitchCenter);
+        var noteMax = noteCenter + 1;
+        var noteMin = noteCenter - 1;
+        this.pitchChart.options.axisY.minimum = semitones2Freq(noteMin);
+        this.pitchChart.options.axisY.maximum = semitones2Freq(noteMax);
     }
 
     var dataPoints = [];

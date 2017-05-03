@@ -27,6 +27,7 @@ function AudioProcessor(sampleRate) {
     this.timestamps = [];
     this.frames = [];
     this.pitches = [];
+    this.notes = [];
     this.vibratoRates = [];
     this.vibratoWidths = [];
 }
@@ -84,7 +85,11 @@ AudioProcessor.prototype.process = function(frame, timestamp) {
 AudioProcessor.prototype.pitchProcess = function() {
     var result = detectPitch(this.frames[this.frames.length - 1]);
     if (result != null && result.freq != -1) {
+
         this.pitches.push(result.freq);
+
+        // Convert pitch from frequency to semitones (number of semitones from A-440)
+        this.notes.push(freq2Semitones(result.freq));
     }
     else {
         this.pitches.push(-1);

@@ -13,41 +13,65 @@
     <div class="col-lg-6">
         <br>
         <div class="row">
+            <div class="col-lg-1">
+                <button id="record" class="btn btn-md btn-default center-block">Record</button>
+            </div>
+        </div>
+        <br>
+        <br>
+        <div class="row">
+            <div class="col-lg-4">
+                Window (seconds)
+            </div>
+            <div class="col-lg-4">
+                <div class="input-group">
+                    <span class="input-group-btn">
+                        <button type="button" class="btn btn-default btn-number" data-type="minus" data-field="quant[1]">
+                            <span class="glyphicon glyphicon-minus"></span>
+                        </button>
+                    </span>
+                    <input type="text" name="quant[1]" class="form-control input-number" value="2" min="1" max="10">
+                    <span class="input-group-btn">
+                        <button type="button" class="btn btn-default btn-number" data-type="plus" data-field="quant[1]">
+                            <span class="glyphicon glyphicon-plus"></span>
+                        </button>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-lg-4">
+                Pitch center (Hz)
+            </div>
+            <div class="col-lg-4">
+                <div class="input-group">
+                    <span class="input-group-btn">
+                        <button type="button" class="btn btn-default btn-number" data-type="minus" data-field="quant[2]">
+                            <span class="glyphicon glyphicon-minus"></span>
+                        </button>
+                    </span>
+                    <input type="text" name="quant[2]" class="form-control input-number" value="840" min="75" max="3000">
+                    <span class="input-group-btn">
+                        <button type="button" class="btn btn-default btn-number" data-type="plus" data-field="quant[2]">
+                            <span class="glyphicon glyphicon-plus"></span>
+                        </button>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <br>
+        <br>
+        <div class="row">
             <div class="col-lg-12">
-                <div class="row">
-                    <div class="col-lg-4">
-                        <button id="record" class="btn btn-md btn-default center-block">Record</button>
-                    </div>
-                    <div class="col-lg-4">
-                        Window (seconds)
-                    </div>
-                    <div class="col-lg-4">
-                        <div class="input-group">
-                            <span class="input-group-btn">
-                                <button type="button" class="btn btn-default btn-number" data-type="minus" data-field="quant[1]">
-                                    <span class="glyphicon glyphicon-minus"></span>
-                                </button>
-                            </span>
-                            <input type="text" name="quant[1]" class="form-control input-number" value="2" min="1" max="10">
-                            <span class="input-group-btn">
-                                <button type="button" class="btn btn-default btn-number" data-type="plus" data-field="quant[1]">
-                                    <span class="glyphicon glyphicon-plus"></span>
-                                </button>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <br>
-                <div class="row">
-                    <div class="col-lg-12">
-                        <audio id="audio" src="../data/violin.mp3" controls></audio>
-                    </div>
-                </div>
+                <audio id="audio" src="../data/violin.mp3" controls></audio>
             </div>
         </div>
         <div class="row">
             <h1 id="pitch_name_element"></h1>
 			<h1 id="offset_element"></h1>
+            <br>
+			<h1 id="pitch_freq_element"></h1>
         </div>
     </div>
     <div class="col-lg-6">
